@@ -12,7 +12,7 @@
     <artifactId>ChooseBot-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>ChooseBot-api</name>
-    <description>Demo project for Spring Boot</description>
+    <description>ChooseEat API for Telegram bot and admin website</description>
     <properties>
         <java.version>11</java.version>
     </properties>
@@ -84,6 +84,15 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots-spring-boot-starter</artifactId>
+            <version>RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
         </dependency>
     </dependencies>
 
