@@ -12,10 +12,10 @@ import javax.validation.constraints.NotNull;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "credential")
+@Table
 @Getter
 @Setter
-public class Credential {
+public class Credential extends DefaultEntity{
 
     @Column(nullable = false)
     @Id

@@ -7,15 +7,15 @@ import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-@Entity(name = "user")
+@Entity(name = "telegram_user")
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "user")
+@Table
 @Getter
 @Setter
-public class User {
+public class TelegramUser extends AbstractTelegramEntity {
 
     @Column(nullable = false)
     @Id
@@ -31,5 +31,6 @@ public class User {
     Boolean registered = false;
     UserStatus status;
 
-
+    @ManyToOne
+    TelegramLocation location;
 }

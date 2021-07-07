@@ -4,10 +4,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import java.util.List;
 
-@Entity(name = "promo_code")
+@Entity(name = "telegram_location")
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
@@ -15,14 +13,19 @@ import java.util.List;
 @Table
 @Getter
 @Setter
-public class PromoCode extends DefaultEntity {
-    @Column(nullable = false)
+public class TelegramLocation extends AbstractTelegramEntity{
     @Id
+    @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     Long id;
 
-    @NotNull String value;
+    @Column(name = "longitude")
+    Float longitude;
+    @Column(name = "latitude")
+    Float latitude;
+    String city;
 
-    @ManyToMany
-    List<Restaurant> restaurants;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    TelegramUser user;
 }

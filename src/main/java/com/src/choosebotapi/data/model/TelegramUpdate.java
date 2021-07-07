@@ -1,14 +1,11 @@
 package com.src.choosebotapi.data.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
 
-@Entity(name = "restaurant")
+@Entity(name = "telegram_update")
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
@@ -16,19 +13,14 @@ import java.time.LocalDateTime;
 @Table
 @Getter
 @Setter
-public class Restaurant extends DefaultEntity{
+public class TelegramUpdate extends AbstractTelegramEntity {
 
     @Column(nullable = false)
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     Long id;
 
-    @NotNull
-    String name;
-
-    @NotNull
-    String description;
-
-    @Lob
-    byte[] image;
+    @ManyToOne
+    @JoinColumn(name = "message_id")
+    TelegramMessage message;
 }
