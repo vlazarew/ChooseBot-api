@@ -7,6 +7,7 @@ import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
 @SpringBootApplication
 @Log4j2
@@ -26,6 +27,15 @@ public class ChooseBotApiApplication {
                 .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE);
 
         return mapper;
+    }
+
+    @Bean
+    public ReloadableResourceBundleMessageSource messageSource() {
+        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+        messageSource.setBasename("classpath:ui.properties");
+        messageSource.setCacheSeconds(3600);
+        messageSource.setDefaultEncoding("UTF-8"); // Add this
+        return messageSource;
     }
 
 }

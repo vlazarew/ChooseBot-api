@@ -18,7 +18,6 @@ public class TelegramChat extends AbstractTelegramEntity {
 
     @Column(nullable = false)
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     Long id;
 
     Boolean userChat = true;

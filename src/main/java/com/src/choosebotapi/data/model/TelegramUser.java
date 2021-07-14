@@ -21,15 +21,19 @@ public class TelegramUser extends AbstractTelegramEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     Long id;
+    Long TelegramId;
 
     @NotEmpty @NotNull String userName;
 
-    @NotEmpty @NotNull String name;
-    @NotEmpty @NotNull String lastname;
+    String firstName;
+    String lastName;
 
     String phoneNumber;
     Boolean registered = false;
     UserStatus status;
+
+    String languageCode;
+    Boolean isBot;
 
     @ManyToOne
     TelegramLocation location;

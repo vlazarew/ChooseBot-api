@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 @Entity(name = "telegram_message")
 @Data
@@ -20,12 +21,14 @@ public class TelegramMessage extends AbstractTelegramEntity{
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     Long id;
 
-    String value;
+    String text;
 
     @NotNull
     @ManyToOne
     @JoinColumn(name = "from_id")
     TelegramUser from;
+
+    LocalDateTime date;
 
     @OneToOne
     TelegramContact contact;
