@@ -7,7 +7,6 @@ import lombok.experimental.FieldDefaults;
 import javax.persistence.*;
 
 @Entity(name = "telegram_chat")
-@Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -25,7 +24,7 @@ public class TelegramChat extends AbstractTelegramEntity {
     Boolean channelChat = false;
     Boolean superGroupChat = false;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     TelegramUser user;
 

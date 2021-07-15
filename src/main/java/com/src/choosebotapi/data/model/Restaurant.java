@@ -9,7 +9,7 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity(name = "restaurant")
-@Data
+
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,7 +26,6 @@ public class Restaurant extends DefaultEntity{
     @NotNull
     String name;
 
-    @NotNull
     String description;
 
     @Lob

@@ -29,13 +29,25 @@ public class TelegramKeyboards {
 
         KeyboardRow keyboardFirstRow = new KeyboardRow();
 
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SHARE_PHONE_NUMBER));
+//        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SHARE_PHONE_NUMBER));
 //        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SKIP));
 //        keyboardFirstRow.add(new KeyboardButton(telegramHandler.TWITTER_BUTTON));
 //        keyboardFirstRow.add(new KeyboardButton(telegramHandler.WEATHER_BUTTON));
 
         keyboard.add(keyboardFirstRow);
 
+
+        replyKeyboardMarkup.setKeyboard(keyboard);
+        return replyKeyboardMarkup;
+    }
+
+    public ReplyKeyboardMarkup getConfirmFullNameToOrderKeyboardMarkup(){
+        ReplyKeyboardMarkup replyKeyboardMarkup = getTunedReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.CONFIRM_FULLNAME_FOR_ORDER));
+        keyboard.add(keyboardFirstRow);
 
         replyKeyboardMarkup.setKeyboard(keyboard);
         return replyKeyboardMarkup;

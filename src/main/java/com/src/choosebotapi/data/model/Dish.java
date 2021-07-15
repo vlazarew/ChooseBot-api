@@ -12,7 +12,7 @@ import javax.validation.constraints.Positive;
 import java.time.LocalDateTime;
 
 @Entity(name = "dish")
-@Data
+
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,11 +27,11 @@ public class Dish extends DefaultEntity {
     Long id;
 
     @NotEmpty @NotNull String name;
-    @NotEmpty @NotNull String description;
+    String description;
 
     @NotNull
     @JoinColumn(name = "dish_id")
-    @ManyToOne(cascade = {CascadeType.ALL})
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     DishCategory category;
 
 

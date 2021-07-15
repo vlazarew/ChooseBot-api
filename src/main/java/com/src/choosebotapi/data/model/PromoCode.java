@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Entity(name = "promo_code")
-@Data
+
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -23,6 +23,6 @@ public class PromoCode extends DefaultEntity {
 
     @NotNull String value;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     List<Restaurant> restaurants;
 }

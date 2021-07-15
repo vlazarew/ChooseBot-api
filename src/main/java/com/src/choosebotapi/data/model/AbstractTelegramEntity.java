@@ -6,7 +6,7 @@ import lombok.Setter;
 import javax.persistence.MappedSuperclass;
 
 @MappedSuperclass
-@Data
+
 @Setter
 public abstract class AbstractTelegramEntity extends DefaultEntity {
 }

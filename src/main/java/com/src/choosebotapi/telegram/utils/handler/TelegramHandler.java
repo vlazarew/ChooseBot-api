@@ -70,6 +70,9 @@ public class TelegramHandler implements TelegramMessageHandler {
     @Value("${telegram.SHARE_PHONE_NUMBER}")
     public String SHARE_PHONE_NUMBER;
 
+    @Value("${telegram.CONFIRM_FULLNAME_FOR_ORDER}")
+    public String CONFIRM_FULLNAME_FOR_ORDER;
+
     @Override
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
 
@@ -81,11 +84,25 @@ public class TelegramHandler implements TelegramMessageHandler {
         sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status);
     }
 
+    public void sendMessageVerifyFullName(Long chatId, TelegramUser telegramUser, String text, UserStatus status){
+        ReplyKeyboardMarkup replyKeyboardMarkup = telegramKeyboards.getConfirmFullNameToOrderKeyboardMarkup();
+        sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status);
+    }
+
     @Override
     public void sendTextMessageReplyKeyboardMarkup(Long chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup,
                                                    UserStatus status) {
-        SendMessage sendMessage = makeSendMessage(chatId, text, replyKeyboardMarkup);
+        SendMessage sendMessage = makeSendMessageWithKeyboard(chatId, text, replyKeyboardMarkup);
+        executeSendingMessage(chatId, status, sendMessage);
+    }
 
+    @Override
+    public void sendTextMessageWithoutKeyboard(Long chatId, String text, UserStatus status) {
+        SendMessage sendMessage = makeSendMessageWithoutKeyboard(chatId, text);
+        executeSendingMessage(chatId, status, sendMessage);
+    }
+
+    private void executeSendingMessage(Long chatId, UserStatus status, SendMessage sendMessage) {
         try {
             telegramBot.execute(sendMessage);
 
@@ -106,16 +123,24 @@ public class TelegramHandler implements TelegramMessageHandler {
         } catch (TelegramApiException e) {
             log.error(e);
         }
-
     }
 
-    private SendMessage makeSendMessage(Long chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup) {
+    private SendMessage makeSendMessageWithKeyboard(Long chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(text);
 
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
+        return sendMessage;
+    }
+
+    private SendMessage makeSendMessageWithoutKeyboard(Long chatId, String text) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.enableMarkdown(true);
+        sendMessage.setChatId(String.valueOf(chatId));
+        sendMessage.setText(text);
+
         return sendMessage;
     }
 }

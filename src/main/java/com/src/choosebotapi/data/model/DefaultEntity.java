@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+
 @Setter
 public abstract class DefaultEntity implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "YYYY-MM-HH hh:mm:ss")

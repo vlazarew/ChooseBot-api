@@ -1,5 +1,6 @@
 package com.src.choosebotapi.data.model;
 
+import jdk.jfr.Description;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -8,7 +9,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 @Entity(name = "telegram_user")
-@Data
+
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -28,6 +29,9 @@ public class TelegramUser extends AbstractTelegramEntity {
     String firstName;
     String lastName;
 
+    @Column(columnDefinition = "name of user for order in restaurant")
+    String fullName;
+
     String phoneNumber;
     Boolean registered = false;
     UserStatus status;
@@ -35,6 +39,6 @@ public class TelegramUser extends AbstractTelegramEntity {
     String languageCode;
     Boolean isBot;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     TelegramLocation location;
 }

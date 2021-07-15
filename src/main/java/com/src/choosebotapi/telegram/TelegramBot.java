@@ -17,6 +17,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @Log4j2
@@ -59,8 +60,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         boolean hasText = message.hasText();
         boolean hasLocation = message.hasLocation();
 
-        TelegramUpdate telegramUpdate = telegramUpdateService.save(update);
-        telegramMessageHandlers.forEach(telegramMessageHandler -> telegramMessageHandler.handle(telegramUpdate, hasText,
-                hasContact, hasLocation));
+        CompletableFuture<TelegramUpdate> telegramUpdate = telegramUpdateService.save(update);
+
+        telegramUpdate.thenApplyAsync(tgUpdate -> {
+            telegramMessageHandlers.forEach(telegramMessageHandler -> CompletableFuture.runAsync(() -> telegramMessageHandler.handle(tgUpdate, hasText,
+                    hasContact, hasLocation)));
+            return null;
+        });
+
     }
 }

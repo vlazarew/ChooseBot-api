@@ -13,6 +13,8 @@ import org.telegram.telegrambots.meta.api.objects.Location;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 @Transactional
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -34,7 +36,7 @@ public class TelegramUpdateService {
     TelegramUpdateMapper telegramUpdateMapper;
 
     // Турбо метод, записывающий все изменения, которые пришли по апдейту
-    public TelegramUpdate save(Update update) {
+    public CompletableFuture<TelegramUpdate> save(Update update) {
 
         Message message = update.getMessage();
         boolean hasContact = message.hasContact();
@@ -60,13 +62,22 @@ public class TelegramUpdateService {
         return saveTelegramUpdate(update, telegramMessage);
     }
 
-    private TelegramUser saveFindUser(Message message) {
-        return userRepository.findById(message.getFrom().getId())
-                .orElseGet(() -> {
+    private CompletableFuture<TelegramUser> saveFindUser(Message message) {
+        return userRepository.findById(message.getFrom().getId()).thenApplyAsync(
+                telegramUser -> telegramUser.orElseGet(() -> {
                     TelegramUser transformedUser = telegramUserMapper.toEntity(message.getFrom());
                     transformedUser.setStatus(UserStatus.getInitialStatus());
                     return userRepository.save(transformedUser);
-                });
+                })
+        );
+//        return CompletableFuture.supplyAsync(() -> userRepository.findById(message.getFrom().getId()))
+//                .thenApplyAsync( -> )
+//                (() -> {
+//                    TelegramUser transformedUser = telegramUserMapper.toEntity(message.getFrom());
+//                    transformedUser.setStatus(UserStatus.getInitialStatus());
+//                    CompletableFuture<TelegramUser> future = CompletableFuture.supplyAsync(() -> userRepository.save(transformedUser));
+//                    return future.get();
+//                }));
     }
 
     private TelegramChat saveFindChat(Message message, TelegramUser user) {
@@ -125,9 +136,9 @@ public class TelegramUpdateService {
         return messageRepository.save(telegramMessage);
     }
 
-    private TelegramUpdate saveTelegramUpdate(Update update, TelegramMessage message) {
+    private CompletableFuture<TelegramUpdate> saveTelegramUpdate(Update update, TelegramMessage message) {
         TelegramUpdate telegramUpdate = telegramUpdateMapper.toEntity(update);
         telegramUpdate.setMessage(message);
-        return telegramUpdateRepository.save(telegramUpdate);
+        return CompletableFuture.supplyAsync(() -> telegramUpdateRepository.save(telegramUpdate));
     }
 }
