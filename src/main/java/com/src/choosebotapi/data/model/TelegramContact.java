@@ -16,14 +16,13 @@ public class TelegramContact extends AbstractTelegramEntity {
 
     @Column(nullable = false)
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     Long id;
 
     String phoneNumber;
     String firstName;
     String lastName;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     TelegramUser user;
 

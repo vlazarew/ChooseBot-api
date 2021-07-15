@@ -35,6 +35,6 @@ public class TelegramUser extends AbstractTelegramEntity {
     String languageCode;
     Boolean isBot;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.ALL)
     TelegramLocation location;
 }

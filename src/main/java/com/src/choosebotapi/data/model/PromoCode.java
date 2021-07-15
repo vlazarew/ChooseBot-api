@@ -22,6 +22,6 @@ public class PromoCode extends DefaultEntity {
 
     @NotNull String value;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL)
     List<Restaurant> restaurants;
 }

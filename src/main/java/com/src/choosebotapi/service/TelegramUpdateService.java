@@ -45,7 +45,7 @@ public class TelegramUpdateService {
         CompletableFuture<TelegramUser> userFuture = saveFindUser(message);
 
         // Находим или создаем чат
-        return userFuture.thenComposeAsync(user -> {
+        return userFuture.thenApply(user -> {
             CompletableFuture<TelegramChat> telegramChat = saveFindChat(message, user);
 
             // Сохранение контакта
@@ -55,17 +55,18 @@ public class TelegramUpdateService {
             CompletableFuture<TelegramLocation> telegramLocation = hasLocation ? saveFindLocation(update, user) : null;
 
             // Запись истории сообщений
-            return saveTelegramMessage(message, user, telegramChat.join(),
+            TelegramMessage telegramMessage = saveTelegramMessage(message, user, telegramChat.join(),
                     telegramContact == null ? null : telegramContact.join(),
-                    telegramLocation == null ? null : telegramLocation.join())
-                    // Сохраняем все наши обновления
-                    .thenCompose(telegramMessage -> saveTelegramUpdate(update, telegramMessage));
+                    telegramLocation == null ? null : telegramLocation.join());
+
+            // Сохраняем все наши обновления
+            return saveTelegramUpdate(update, telegramMessage);
         });
     }
 
     @Async
     CompletableFuture<TelegramUser> saveFindUser(Message message) {
-        return CompletableFuture.completedFuture(userRepository.findById(message.getFrom().getId())).thenApplyAsync(
+        return CompletableFuture.completedFuture(userRepository.findById(message.getFrom().getId())).thenApply(
                 telegramUser -> telegramUser.orElseGet(() -> {
                     TelegramUser transformedUser = telegramUserMapper.toEntity(message.getFrom());
                     transformedUser.setStatus(UserStatus.getInitialStatus());
@@ -77,7 +78,7 @@ public class TelegramUpdateService {
     @Async
     CompletableFuture<TelegramChat> saveFindChat(Message message, TelegramUser user) {
         Chat chat = message.getChat();
-        return CompletableFuture.completedFuture(telegramChatRepository.findById(chat.getId())).thenApplyAsync(
+        return CompletableFuture.completedFuture(telegramChatRepository.findById(chat.getId())).thenApply(
                 telegramChat -> telegramChat.orElseGet(() -> {
                     TelegramChat transformedChat = telegramChatMapper.toEntity(chat);
                     transformedChat.setUser(user);
@@ -87,13 +88,13 @@ public class TelegramUpdateService {
 
     @Async
     CompletableFuture<TelegramContact> saveFindContact(Message message, TelegramUser user) {
-        return CompletableFuture.completedFuture(telegramContactRepository.findById(user.getId())).thenApplyAsync(
+        return CompletableFuture.completedFuture(telegramContactRepository.findById(user.getId())).thenApply(
                 telegramContact -> telegramContact.orElseGet(() -> {
                     TelegramContact transformedContact = telegramContactMapper.toEntity(message.getContact());
                     transformedContact.setUser(user);
 
                     // Пользователю сохраняем номер телефона
-                    setUserPhone(user, transformedContact);
+                    CompletableFuture.runAsync(() -> setUserPhone(user, transformedContact));
 
                     return telegramContactRepository.save(transformedContact);
                 })
@@ -103,7 +104,7 @@ public class TelegramUpdateService {
     @Async
     void setUserPhone(TelegramUser user, TelegramContact transformedContact) {
         user.setPhoneNumber(transformedContact.getPhoneNumber());
-        CompletableFuture.runAsync(() -> userRepository.save(user));
+        userRepository.save(user);
     }
 
     @Async
@@ -113,32 +114,30 @@ public class TelegramUpdateService {
         float latitude = location.getLatitude().floatValue();
 
         return CompletableFuture.completedFuture(telegramLocationRepository.findByLongitudeAndLatitude(longitude, latitude))
-                .thenApplyAsync(telegramLocation -> telegramLocation.orElseGet(() -> {
+                .thenApply(telegramLocation -> telegramLocation.orElseGet(() -> {
                     TelegramLocation transformedLocation = telegramLocationMapper.toEntity(location);
                     transformedLocation.setUser(user);
 
                     user.setLocation(transformedLocation);
-                    CompletableFuture.runAsync(() -> userRepository.save(user));
+                    userRepository.save(user);
 
                     return telegramLocationRepository.save(transformedLocation);
                 }));
     }
 
-    @Async
-    CompletableFuture<TelegramMessage> saveTelegramMessage(Message message, TelegramUser user, TelegramChat telegramChat,
-                                                           TelegramContact telegramContact, TelegramLocation telegramLocation) {
+    TelegramMessage saveTelegramMessage(Message message, TelegramUser user, TelegramChat telegramChat,
+                                        TelegramContact telegramContact, TelegramLocation telegramLocation) {
         TelegramMessage telegramMessage = telegramMessageMapper.toEntity(message);
         telegramMessage.setFrom(user);
         telegramMessage.setChat(telegramChat);
         telegramMessage.setContact(telegramContact);
         telegramMessage.setLocation(telegramLocation);
-        return CompletableFuture.supplyAsync(() -> messageRepository.save(telegramMessage));
+        return messageRepository.save(telegramMessage);
     }
 
-    @Async
-    CompletableFuture<TelegramUpdate> saveTelegramUpdate(Update update, TelegramMessage message) {
+    TelegramUpdate saveTelegramUpdate(Update update, TelegramMessage message) {
         TelegramUpdate telegramUpdate = telegramUpdateMapper.toEntity(update);
         telegramUpdate.setMessage(message);
-        return CompletableFuture.supplyAsync(() -> telegramUpdateRepository.save(telegramUpdate));
+        return telegramUpdateRepository.save(telegramUpdate);
     }
 }

@@ -24,7 +24,7 @@ public class TelegramLocation extends AbstractTelegramEntity {
     Float latitude;
     String city;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     TelegramUser user;
 }

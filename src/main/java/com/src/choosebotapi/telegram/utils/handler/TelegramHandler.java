@@ -119,7 +119,7 @@ public class TelegramHandler implements TelegramMessageHandler {
                         if (telegramChat.isPresent()) {
                             TelegramUser user = telegramChat.get().getUser();
                             user.setStatus(status);
-                            CompletableFuture.runAsync(() -> userRepository.save(user));
+                            userRepository.save(user);
                         } else {
                             log.error("Не найден чат с id: " + chatId);
                         }

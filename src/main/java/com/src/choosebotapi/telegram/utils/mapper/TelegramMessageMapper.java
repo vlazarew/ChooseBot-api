@@ -26,6 +26,7 @@ public class TelegramMessageMapper extends AbstractMapper<TelegramMessage, Messa
     public void setupMapper() {
         mapper.createTypeMap(Message.class, TelegramMessage.class)
                 .addMappings(m -> {
+                    m.map(Message::getMessageId, TelegramMessage::setMessageId);
                     m.map(Message::getMessageId, TelegramMessage::setId);
                     m.map(Message::getText, TelegramMessage::setText);
                     m.map(Message::getDate, TelegramMessage::setDate);

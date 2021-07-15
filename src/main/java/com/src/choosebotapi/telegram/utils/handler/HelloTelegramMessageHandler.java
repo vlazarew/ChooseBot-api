@@ -42,10 +42,9 @@ public class HelloTelegramMessageHandler extends TelegramHandler {
         }
 
         Long chatId = telegramMessage.getChat().getId();
-        TelegramUser telegramUser = telegramMessage.getFrom();
 
         CompletableFuture.runAsync(() -> sendTextMessageWithoutKeyboard(chatId, helloMessage, NotRegistered))
-                .thenRunAsync(() -> sendMessageToUserByCustomMainKeyboard(chatId, telegramUser, enterFullUserNameMessage, EnterFullName));
+                .thenRun(() -> sendTextMessageWithoutKeyboard(chatId, enterFullUserNameMessage, EnterFullName));
     }
 
 }

@@ -1,7 +1,6 @@
 package com.src.choosebotapi.data.repository;
 
 import com.src.choosebotapi.data.model.TelegramLocation;
-import lombok.NonNull;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.rest.webmvc.RepositoryRestController;
 

@@ -42,14 +42,14 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
         Long chatId = telegramMessage.getChat().getId();
 
         if (status == EnterFullName) {
-            enterFullUserName(telegramUser, messageText);
+            CompletableFuture.completedFuture(enterFullUserName(telegramUser, messageText));
         }
 
     }
 
-    private void enterFullUserName(TelegramUser telegramUser, String messageText) {
+    private TelegramUser enterFullUserName(TelegramUser telegramUser, String messageText) {
         telegramUser.setFullName(messageText.trim());
-        CompletableFuture.runAsync(() -> telegramUserRepository.save(telegramUser));
+        return telegramUserRepository.save(telegramUser);
     }
 
 }
