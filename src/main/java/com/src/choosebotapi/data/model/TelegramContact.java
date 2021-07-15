@@ -12,7 +12,7 @@ import javax.persistence.*;
 @Table
 @Getter
 @Setter
-public class TelegramContact extends AbstractTelegramEntity{
+public class TelegramContact extends AbstractTelegramEntity {
 
     @Column(nullable = false)
     @Id

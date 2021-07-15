@@ -6,7 +6,6 @@ import lombok.experimental.FieldDefaults;
 import javax.persistence.*;
 
 @Entity(name = "telegram_update")
-
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor

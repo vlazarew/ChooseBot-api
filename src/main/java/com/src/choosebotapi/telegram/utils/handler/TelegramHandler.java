@@ -1,6 +1,5 @@
 package com.src.choosebotapi.telegram.utils.handler;
 
-import com.src.choosebotapi.data.model.TelegramChat;
 import com.src.choosebotapi.data.model.TelegramUpdate;
 import com.src.choosebotapi.data.model.TelegramUser;
 import com.src.choosebotapi.data.model.UserStatus;
@@ -15,19 +14,17 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Log4j2
 @PropertySource("classpath:commands.properties")
-@EnableAsync
 public class TelegramHandler implements TelegramMessageHandler {
 
     @Autowired
@@ -75,53 +72,60 @@ public class TelegramHandler implements TelegramMessageHandler {
 
     @Override
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
-
     }
 
     @Override
     public void sendMessageToUserByCustomMainKeyboard(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
-        ReplyKeyboardMarkup replyKeyboardMarkup = telegramKeyboards.getCustomReplyMainKeyboardMarkup(telegramUser);
-        sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status);
+        telegramKeyboards.getCustomReplyMainKeyboardMarkup(telegramUser)
+                .thenCompose(replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status)));
+        ;
     }
 
-    public void sendMessageVerifyFullName(Long chatId, TelegramUser telegramUser, String text, UserStatus status){
-        ReplyKeyboardMarkup replyKeyboardMarkup = telegramKeyboards.getConfirmFullNameToOrderKeyboardMarkup();
-        sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status);
+    public void sendMessageVerifyFullName(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
+        telegramKeyboards.getConfirmFullNameToOrderKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
+        );
     }
 
     @Override
     public void sendTextMessageReplyKeyboardMarkup(Long chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup,
                                                    UserStatus status) {
-        SendMessage sendMessage = makeSendMessageWithKeyboard(chatId, text, replyKeyboardMarkup);
-        executeSendingMessage(chatId, status, sendMessage);
+        CompletableFuture.supplyAsync(() -> makeSendMessageWithKeyboard(chatId, text, replyKeyboardMarkup))
+                .thenCompose(sendMessage ->
+                        CompletableFuture.runAsync(() -> executeSendingMessage(chatId, status, sendMessage)));
     }
 
     @Override
     public void sendTextMessageWithoutKeyboard(Long chatId, String text, UserStatus status) {
-        SendMessage sendMessage = makeSendMessageWithoutKeyboard(chatId, text);
-        executeSendingMessage(chatId, status, sendMessage);
+        CompletableFuture.supplyAsync(() -> makeSendMessageWithoutKeyboard(chatId, text))
+                .thenCompose(sendMessage ->
+                        CompletableFuture.runAsync(() -> executeSendingMessage(chatId, status, sendMessage)));
     }
 
     private void executeSendingMessage(Long chatId, UserStatus status, SendMessage sendMessage) {
-        try {
-            telegramBot.execute(sendMessage);
-
-            if (status != null) {
-                TelegramUser user;
-                Optional<TelegramChat> chat = telegramChatRepository.findById(chatId);
-
-                if (chat.isPresent()) {
-                    user = chat.get().getUser();
-
-                    user.setStatus(status);
-                    userRepository.save(user);
-                } else {
-                    log.error("Не найден чат с id: " + chatId);
-                }
+        CompletableFuture.runAsync(() -> {
+            try {
+                telegramBot.execute(sendMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
             }
+        });
 
-        } catch (TelegramApiException e) {
-            log.error(e);
+        if (status != null) {
+            CompletableFuture.supplyAsync(() -> telegramChatRepository.findById(chatId)).thenCompose(
+                    telegramChat -> {
+                        if (telegramChat.isPresent()) {
+                            TelegramUser user = telegramChat.get().getUser();
+                            user.setStatus(status);
+                            CompletableFuture.runAsync(() -> userRepository.save(user));
+                        } else {
+                            log.error("Не найден чат с id: " + chatId);
+                        }
+                        return null;
+                    }
+            );
         }
     }
 

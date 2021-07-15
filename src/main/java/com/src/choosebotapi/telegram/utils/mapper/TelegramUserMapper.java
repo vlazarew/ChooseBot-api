@@ -23,7 +23,7 @@ public class TelegramUserMapper extends AbstractMapper<TelegramUser, User> {
     public void setupMapper() {
         mapper.createTypeMap(User.class, TelegramUser.class)
                 .addMappings(m -> {
-                    m.map(User::getId, TelegramUser::setTelegramId);
+                    m.map(User::getId, TelegramUser::setId);
                     m.map(User::getFirstName, TelegramUser::setFirstName);
                     m.map(User::getLastName, TelegramUser::setLastName);
                     m.map(User::getLanguageCode, TelegramUser::setLanguageCode);

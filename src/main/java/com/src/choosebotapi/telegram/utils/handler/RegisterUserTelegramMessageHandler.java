@@ -14,6 +14,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.CompletableFuture;
+
 import static com.src.choosebotapi.data.model.UserStatus.EnterFullName;
 import static com.src.choosebotapi.data.model.UserStatus.NotRegistered;
 
@@ -22,9 +24,6 @@ import static com.src.choosebotapi.data.model.UserStatus.NotRegistered;
 @EnableAsync
 @PropertySource("classpath:ui.properties")
 public class RegisterUserTelegramMessageHandler extends TelegramHandler {
-
-    @Value("${telegram.enterFullUserName}")
-    String enterFullUserNameMessage;
 
     @Autowired
     TelegramUserRepository telegramUserRepository;
@@ -42,9 +41,7 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
         UserStatus status = telegramUser.getStatus();
         Long chatId = telegramMessage.getChat().getId();
 
-        if (status == NotRegistered) {
-            sendMessageToUserByCustomMainKeyboard(chatId, telegramUser, enterFullUserNameMessage, EnterFullName);
-        } else if (status == EnterFullName) {
+        if (status == EnterFullName) {
             enterFullUserName(telegramUser, messageText);
         }
 
@@ -52,7 +49,7 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
 
     private void enterFullUserName(TelegramUser telegramUser, String messageText) {
         telegramUser.setFullName(messageText.trim());
-        telegramUserRepository.save(telegramUser);
+        CompletableFuture.runAsync(() -> telegramUserRepository.save(telegramUser));
     }
 
 }

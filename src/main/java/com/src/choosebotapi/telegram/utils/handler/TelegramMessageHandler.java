@@ -3,6 +3,7 @@ package com.src.choosebotapi.telegram.utils.handler;
 import com.src.choosebotapi.data.model.TelegramUpdate;
 import com.src.choosebotapi.data.model.TelegramUser;
 import com.src.choosebotapi.data.model.UserStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 
 public interface TelegramMessageHandler {

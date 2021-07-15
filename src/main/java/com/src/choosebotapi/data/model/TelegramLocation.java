@@ -6,14 +6,13 @@ import lombok.experimental.FieldDefaults;
 import javax.persistence.*;
 
 @Entity(name = "telegram_location")
-
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
 @Table
 @Getter
 @Setter
-public class TelegramLocation extends AbstractTelegramEntity{
+public class TelegramLocation extends AbstractTelegramEntity {
     @Id
     @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

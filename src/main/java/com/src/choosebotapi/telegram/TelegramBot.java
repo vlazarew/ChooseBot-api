@@ -1,6 +1,5 @@
 package com.src.choosebotapi.telegram;
 
-import com.src.choosebotapi.data.model.TelegramUpdate;
 import com.src.choosebotapi.service.TelegramUpdateService;
 import com.src.choosebotapi.telegram.utils.handler.TelegramMessageHandler;
 import lombok.AccessLevel;
@@ -11,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -55,18 +55,21 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+        CompletableFuture.runAsync(() -> handleUpdate(update));
+    }
+
+    private void handleUpdate(Update update) {
         Message message = update.getMessage();
         boolean hasContact = message.hasContact();
         boolean hasText = message.hasText();
         boolean hasLocation = message.hasLocation();
 
-        CompletableFuture<TelegramUpdate> telegramUpdate = telegramUpdateService.save(update);
-
-        telegramUpdate.thenApplyAsync(tgUpdate -> {
-            telegramMessageHandlers.forEach(telegramMessageHandler -> CompletableFuture.runAsync(() -> telegramMessageHandler.handle(tgUpdate, hasText,
-                    hasContact, hasLocation)));
-            return null;
-        });
-
+        telegramUpdateService.save(update, message, hasContact, hasLocation)
+                .thenApplyAsync(tgUpdate -> {
+                    telegramMessageHandlers.forEach(telegramMessageHandler ->
+                            CompletableFuture.runAsync(() -> telegramMessageHandler.handle(tgUpdate, hasText,
+                                    hasContact, hasLocation)));
+                    return null;
+                });
     }
 }

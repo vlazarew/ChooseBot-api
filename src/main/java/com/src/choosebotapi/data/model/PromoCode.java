@@ -8,7 +8,6 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Entity(name = "promo_code")
-
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor

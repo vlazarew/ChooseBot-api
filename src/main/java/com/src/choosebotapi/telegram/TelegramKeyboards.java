@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -22,11 +23,10 @@ public class TelegramKeyboards {
     @Autowired
     TelegramHandler telegramHandler;
 
-    public ReplyKeyboardMarkup getCustomReplyMainKeyboardMarkup(TelegramUser user) {
-        ReplyKeyboardMarkup replyKeyboardMarkup = getTunedReplyKeyboardMarkup();
+    public CompletableFuture<ReplyKeyboardMarkup> getCustomReplyMainKeyboardMarkup(TelegramUser user) {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup = CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
 
         List<KeyboardRow> keyboard = new ArrayList<>();
-
         KeyboardRow keyboardFirstRow = new KeyboardRow();
 
 //        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SHARE_PHONE_NUMBER));
@@ -36,20 +36,23 @@ public class TelegramKeyboards {
 
         keyboard.add(keyboardFirstRow);
 
-
-        replyKeyboardMarkup.setKeyboard(keyboard);
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
         return replyKeyboardMarkup;
     }
 
-    public ReplyKeyboardMarkup getConfirmFullNameToOrderKeyboardMarkup(){
-        ReplyKeyboardMarkup replyKeyboardMarkup = getTunedReplyKeyboardMarkup();
+    public CompletableFuture<ReplyKeyboardMarkup> getConfirmFullNameToOrderKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         KeyboardRow keyboardFirstRow = new KeyboardRow();
         keyboardFirstRow.add(new KeyboardButton(telegramHandler.CONFIRM_FULLNAME_FOR_ORDER));
         keyboard.add(keyboardFirstRow);
 
-        replyKeyboardMarkup.setKeyboard(keyboard);
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
         return replyKeyboardMarkup;
     }
 

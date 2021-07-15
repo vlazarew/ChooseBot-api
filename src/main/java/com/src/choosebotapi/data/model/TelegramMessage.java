@@ -8,14 +8,13 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity(name = "telegram_message")
-
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
 @Table
 @Getter
 @Setter
-public class TelegramMessage extends AbstractTelegramEntity{
+public class TelegramMessage extends AbstractTelegramEntity {
     @Column(nullable = false)
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

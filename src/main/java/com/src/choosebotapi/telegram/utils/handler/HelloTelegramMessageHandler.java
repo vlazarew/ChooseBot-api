@@ -8,19 +8,23 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.CompletableFuture;
+
 import static com.src.choosebotapi.data.model.UserStatus.EnterFullName;
+import static com.src.choosebotapi.data.model.UserStatus.NotRegistered;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EnableAsync
 @PropertySource("classpath:ui.properties")
 public class HelloTelegramMessageHandler extends TelegramHandler {
 
     @Value("${telegram.hello}")
     String helloMessage;
+
+    @Value("${telegram.enterFullUserName}")
+    String enterFullUserNameMessage;
 
     @Override
     @Async
@@ -40,7 +44,8 @@ public class HelloTelegramMessageHandler extends TelegramHandler {
         Long chatId = telegramMessage.getChat().getId();
         TelegramUser telegramUser = telegramMessage.getFrom();
 
-        sendTextMessageWithoutKeyboard(chatId, helloMessage, null);
+        CompletableFuture.runAsync(() -> sendTextMessageWithoutKeyboard(chatId, helloMessage, NotRegistered))
+                .thenRunAsync(() -> sendMessageToUserByCustomMainKeyboard(chatId, telegramUser, enterFullUserNameMessage, EnterFullName));
     }
 
 }
