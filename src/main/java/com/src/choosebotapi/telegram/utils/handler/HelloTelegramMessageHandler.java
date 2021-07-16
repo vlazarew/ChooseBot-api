@@ -2,7 +2,6 @@ package com.src.choosebotapi.telegram.utils.handler;
 
 import com.src.choosebotapi.data.model.TelegramMessage;
 import com.src.choosebotapi.data.model.TelegramUpdate;
-import com.src.choosebotapi.data.model.TelegramUser;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,8 +42,12 @@ public class HelloTelegramMessageHandler extends TelegramHandler {
 
         Long chatId = telegramMessage.getChat().getId();
 
-        CompletableFuture.runAsync(() -> sendTextMessageWithoutKeyboard(chatId, helloMessage, NotRegistered))
-                .thenRun(() -> sendTextMessageWithoutKeyboard(chatId, enterFullUserNameMessage, EnterFullName));
+        CompletableFuture.runAsync(() -> sendTextMessageWithoutKeyboard(chatId, helloMessage, null))
+                .thenRunAsync(() -> {
+                    if (telegramMessage.getFrom().getStatus() == NotRegistered) {
+                        sendTextMessageWithoutKeyboard(chatId, enterFullUserNameMessage, EnterFullName);
+                    }
+                });
     }
 
 }

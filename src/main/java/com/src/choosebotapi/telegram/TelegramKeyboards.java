@@ -41,13 +41,36 @@ public class TelegramKeyboards {
         return replyKeyboardMarkup;
     }
 
-    public CompletableFuture<ReplyKeyboardMarkup> getConfirmFullNameToOrderKeyboardMarkup() {
+    public CompletableFuture<ReplyKeyboardMarkup> getSharePhoneNumberKeyboardMarkup() {
         CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
                 CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         KeyboardRow keyboardFirstRow = new KeyboardRow();
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.CONFIRM_FULLNAME_FOR_ORDER));
+        KeyboardButton sharePhoneButton = new KeyboardButton(telegramHandler.SHARE_PHONE_NUMBER);
+        sharePhoneButton.setRequestContact(true);
+
+        keyboardFirstRow.add(sharePhoneButton);
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SKIP));
+        keyboard.add(keyboardFirstRow);
+
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
+        return replyKeyboardMarkup;
+    }
+
+    public CompletableFuture<ReplyKeyboardMarkup> getShareLocationKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        KeyboardButton shareLocationButton = new KeyboardButton(telegramHandler.SHARE_LOCATION);
+        shareLocationButton.setRequestLocation(true);
+
+        keyboardFirstRow.add(shareLocationButton);
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SKIP));
         keyboard.add(keyboardFirstRow);
 
         replyKeyboardMarkup.thenCompose(

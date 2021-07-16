@@ -67,8 +67,11 @@ public class TelegramHandler implements TelegramMessageHandler {
     @Value("${telegram.SHARE_PHONE_NUMBER}")
     public String SHARE_PHONE_NUMBER;
 
-    @Value("${telegram.CONFIRM_FULLNAME_FOR_ORDER}")
-    public String CONFIRM_FULLNAME_FOR_ORDER;
+    @Value("${telegram.SHARE_LOCATION}")
+    public String SHARE_LOCATION;
+
+    @Value("${telegram.SKIP}")
+    public String SKIP;
 
     @Override
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
@@ -82,8 +85,15 @@ public class TelegramHandler implements TelegramMessageHandler {
         ;
     }
 
-    public void sendMessageVerifyFullName(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
-        telegramKeyboards.getConfirmFullNameToOrderKeyboardMarkup().thenCompose(
+    public void sendMessageVerifyPhoneNumber(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
+        telegramKeyboards.getSharePhoneNumberKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
+        );
+    }
+
+    public void sendMessageShareLocation(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
+        telegramKeyboards.getShareLocationKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
                         CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
         );
