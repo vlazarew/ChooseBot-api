@@ -17,6 +17,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.concurrent.CompletableFuture;
@@ -73,6 +74,42 @@ public class TelegramHandler implements TelegramMessageHandler {
     @Value("${telegram.SKIP}")
     public String SKIP;
 
+    @Value("${telegram.WANT_TO_EAT}")
+    public String WANT_TO_EAT;
+
+    @Value("${telegram.ENTER_DISH_NAME}")
+    public String ENTER_DISH_NAME;
+
+    @Value("${telegram.GET_DISH_RECOMMENDATION}")
+    public String GET_DISH_RECOMMENDATION;
+
+    @Value("${telegram.DOWN_1_5K}")
+    public String DOWN_1_5K;
+
+    @Value("${telegram.FROM_1_5K_TO_2_5K}")
+    public String FROM_1_5K_TO_2_5K;
+
+    @Value("${telegram.UPPER_2_5K}")
+    public String UPPER_2_5K;
+
+    @Value("${telegram.VEGAN_DISH_DIRECTION}")
+    public String VEGAN_DISH_DIRECTION;
+
+    @Value("${telegram.HEALTHY_DISH_DIRECTION}")
+    public String HEALTHY_DISH_DIRECTION;
+
+    @Value("${telegram.COMMON_DISH_DIRECTION}")
+    public String COMMON_DISH_DIRECTION;
+
+    @Value("${telegram.HEALTHY_GLUTEN_FREE_DISH_DIRECTION}")
+    public String HEALTHY_GLUTEN_FREE_DISH_DIRECTION;
+
+    @Value("${telegram.HEALTHY_LACTOSE_FREE_DISH_DIRECTION}")
+    public String HEALTHY_LACTOSE_FREE_DISH_DIRECTION;
+
+    @Value("${telegram.HEALTHY_KETO_RESTAURANT_DISH_DIRECTION}")
+    public String HEALTHY_KETO_RESTAURANT_DISH_DIRECTION;
+
     @Override
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
     }
@@ -85,15 +122,50 @@ public class TelegramHandler implements TelegramMessageHandler {
         ;
     }
 
-    public void sendMessageVerifyPhoneNumber(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
+    public void sendMessageVerifyPhoneNumber(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSharePhoneNumberKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
                         CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
         );
     }
 
-    public void sendMessageShareLocation(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
+    public void sendMessageShareLocation(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getShareLocationKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
+        );
+    }
+
+    public void sendMessageWantToEat(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getWantToEatKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
+        );
+    }
+
+    public void sendMessageEnterDishOrGetRecommendations(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getEnterDishOrGetRecommendationsKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
+        );
+    }
+
+    public void sendSelectAverageCheck(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getSelectAverageCheckKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
+        );
+    }
+
+    public void sendSelectDishDirection(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getSelectDishDirectionKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
+        );
+    }
+
+    public void sendSelectHealthyDishSubDirection(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getSelectHealthyDishSubDirectionKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
                         CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
         );
@@ -155,6 +227,10 @@ public class TelegramHandler implements TelegramMessageHandler {
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(text);
 
+        ReplyKeyboardRemove replyKeyboardMarkup = new ReplyKeyboardRemove();
+        replyKeyboardMarkup.setRemoveKeyboard(true);
+
+        sendMessage.setReplyMarkup(replyKeyboardMarkup);
         return sendMessage;
     }
 }

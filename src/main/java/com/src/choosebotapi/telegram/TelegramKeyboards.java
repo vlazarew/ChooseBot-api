@@ -79,6 +79,88 @@ public class TelegramKeyboards {
         return replyKeyboardMarkup;
     }
 
+    public CompletableFuture<ReplyKeyboardMarkup> getWantToEatKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.WANT_TO_EAT));
+        keyboard.add(keyboardFirstRow);
+
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
+        return replyKeyboardMarkup;
+    }
+
+    public CompletableFuture<ReplyKeyboardMarkup> getEnterDishOrGetRecommendationsKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.ENTER_DISH_NAME));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.GET_DISH_RECOMMENDATION));
+        keyboard.add(keyboardFirstRow);
+
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
+        return replyKeyboardMarkup;
+    }
+
+    public CompletableFuture<ReplyKeyboardMarkup> getSelectAverageCheckKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.DOWN_1_5K));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.FROM_1_5K_TO_2_5K));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.UPPER_2_5K));
+        keyboard.add(keyboardFirstRow);
+
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
+        return replyKeyboardMarkup;
+    }
+
+    public CompletableFuture<ReplyKeyboardMarkup> getSelectDishDirectionKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.VEGAN_DISH_DIRECTION));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.HEALTHY_DISH_DIRECTION));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.COMMON_DISH_DIRECTION));
+        keyboard.add(keyboardFirstRow);
+
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
+        return replyKeyboardMarkup;
+    }
+
+    public CompletableFuture<ReplyKeyboardMarkup> getSelectHealthyDishSubDirectionKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.HEALTHY_GLUTEN_FREE_DISH_DIRECTION));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.HEALTHY_LACTOSE_FREE_DISH_DIRECTION));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.HEALTHY_KETO_RESTAURANT_DISH_DIRECTION));
+        keyboard.add(keyboardFirstRow);
+
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
+        return replyKeyboardMarkup;
+    }
+
     private ReplyKeyboardMarkup getTunedReplyKeyboardMarkup() {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);

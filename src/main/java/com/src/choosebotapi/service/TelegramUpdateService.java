@@ -16,7 +16,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class TelegramUpdateService {

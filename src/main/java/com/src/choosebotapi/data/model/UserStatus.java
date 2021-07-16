@@ -1,7 +1,9 @@
 package com.src.choosebotapi.data.model;
 
 public enum UserStatus {
-    NotRegistered, EnterFullName, EnterPhone, EnterLocation;
+    NotRegistered, EnterFullName, EnterPhone, EnterLocation, WantToEat, EnterDishOrGetRecommendations,
+    EnterDishName, SelectDishDirection, SelectHealthyDishSubDirection, SelectAverageCheck, GetResultTopDishesByCategory,
+    GetResultRestaurantFromDB;
 //    VerifyEmail, MainPage,
 //    WeatherMainPage, WeatherCommonSettings, WeatherSettings, LocationList, AddCity, RemoveCity, QueryWeatherInLocationCity, WeatherWatch,
 //    NewsNotificationSettings, TwitterNotificationSettings, WeatherNotificationSettings,

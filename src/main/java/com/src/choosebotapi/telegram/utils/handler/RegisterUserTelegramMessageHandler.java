@@ -30,6 +30,9 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
     @Value("${telegram.shareLocation}")
     String shareLocation;
 
+    @Value("${telegram.wantToEat}")
+    String wantToEat;
+
     @Autowired
     TelegramUserRepository telegramUserRepository;
 
@@ -45,24 +48,28 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
         if (status == EnterFullName) {
             enterFullUserName(telegramUser, messageText, chatId);
         } else if (status == EnterPhone) {
-            handleEnterPhone(telegramUser, messageText, chatId);
+            handleEnterPhone(chatId);
+        } else if (status == EnterLocation) {
+            handleEnterLocation(chatId);
         }
 
     }
 
     @Async
-    void handleEnterPhone(TelegramUser telegramUser, String messageText, Long chatId) {
-//        if (messageText.startsWith(SHARE_PHONE_NUMBER)) {
-//            saveContact()
-//        }
-        sendMessageShareLocation(chatId, telegramUser, shareLocation, EnterLocation);
+    void handleEnterPhone(Long chatId) {
+        sendMessageShareLocation(chatId, shareLocation, EnterLocation);
+    }
+
+    @Async
+    void handleEnterLocation(Long chatId) {
+        sendMessageWantToEat(chatId, wantToEat, WantToEat);
     }
 
     @Async
     void enterFullUserName(TelegramUser telegramUser, String messageText, Long chatId) {
         telegramUser.setFullName(messageText.trim());
         CompletableFuture.completedFuture(telegramUserRepository.save(telegramUser));
-        sendMessageVerifyPhoneNumber(chatId, telegramUser, sharePhoneNumber, EnterPhone);
+        sendMessageVerifyPhoneNumber(chatId, sharePhoneNumber, EnterPhone);
     }
 
 }
