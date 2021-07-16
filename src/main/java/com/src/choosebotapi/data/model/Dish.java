@@ -28,7 +28,7 @@ public class Dish extends DefaultEntity {
 
     @NotNull
     @JoinColumn(name = "dish_id")
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.MERGE)
     DishCategory category;
 
 

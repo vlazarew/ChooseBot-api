@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Location;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -17,7 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-@Transactional
+
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class TelegramUpdateService {
@@ -45,7 +44,7 @@ public class TelegramUpdateService {
         CompletableFuture<TelegramUser> userFuture = saveFindUser(message);
 
         // Находим или создаем чат
-        return userFuture.thenApply(user -> {
+        return userFuture.thenCompose(user -> {
             CompletableFuture<TelegramChat> telegramChat = saveFindChat(message, user);
 
             // Сохранение контакта
@@ -55,18 +54,17 @@ public class TelegramUpdateService {
             CompletableFuture<TelegramLocation> telegramLocation = hasLocation ? saveFindLocation(update, user) : null;
 
             // Запись истории сообщений
-            TelegramMessage telegramMessage = saveTelegramMessage(message, user, telegramChat.join(),
+            return saveTelegramMessage(message, user, telegramChat.join(),
                     telegramContact == null ? null : telegramContact.join(),
-                    telegramLocation == null ? null : telegramLocation.join());
-
-            // Сохраняем все наши обновления
-            return saveTelegramUpdate(update, telegramMessage);
+                    telegramLocation == null ? null : telegramLocation.join())
+                    // Сохраняем все наши обновления
+                    .thenCompose(telegramMessage -> saveTelegramUpdate(update, telegramMessage));
         });
     }
 
     @Async
     CompletableFuture<TelegramUser> saveFindUser(Message message) {
-        return CompletableFuture.completedFuture(userRepository.findById(message.getFrom().getId())).thenApply(
+        return CompletableFuture.supplyAsync(() -> userRepository.findById(message.getFrom().getId())).thenApply(
                 telegramUser -> telegramUser.orElseGet(() -> {
                     TelegramUser transformedUser = telegramUserMapper.toEntity(message.getFrom());
                     transformedUser.setStatus(UserStatus.getInitialStatus());
@@ -125,19 +123,22 @@ public class TelegramUpdateService {
                 }));
     }
 
-    TelegramMessage saveTelegramMessage(Message message, TelegramUser user, TelegramChat telegramChat,
-                                        TelegramContact telegramContact, TelegramLocation telegramLocation) {
+
+    @Async
+    CompletableFuture<TelegramMessage> saveTelegramMessage(Message message, TelegramUser user, TelegramChat telegramChat,
+                                                           TelegramContact telegramContact, TelegramLocation telegramLocation) {
         TelegramMessage telegramMessage = telegramMessageMapper.toEntity(message);
         telegramMessage.setFrom(user);
         telegramMessage.setChat(telegramChat);
         telegramMessage.setContact(telegramContact);
         telegramMessage.setLocation(telegramLocation);
-        return messageRepository.save(telegramMessage);
+        return CompletableFuture.completedFuture(messageRepository.save(telegramMessage));
     }
 
-    TelegramUpdate saveTelegramUpdate(Update update, TelegramMessage message) {
+    @Async
+    CompletableFuture<TelegramUpdate> saveTelegramUpdate(Update update, TelegramMessage message) {
         TelegramUpdate telegramUpdate = telegramUpdateMapper.toEntity(update);
         telegramUpdate.setMessage(message);
-        return telegramUpdateRepository.save(telegramUpdate);
+        return CompletableFuture.completedFuture(telegramUpdateRepository.save(telegramUpdate));
     }
 }

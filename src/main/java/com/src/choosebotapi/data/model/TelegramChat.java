@@ -24,7 +24,7 @@ public class TelegramChat extends AbstractTelegramEntity {
     Boolean channelChat = false;
     Boolean superGroupChat = false;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "user_id")
     TelegramUser user;
 

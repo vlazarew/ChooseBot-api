@@ -22,6 +22,6 @@ public class PromoCode extends DefaultEntity {
 
     @NotNull String value;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.MERGE)
     List<Restaurant> restaurants;
 }

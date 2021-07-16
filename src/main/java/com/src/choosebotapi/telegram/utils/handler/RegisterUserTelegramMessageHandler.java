@@ -8,7 +8,6 @@ import com.src.choosebotapi.data.repository.TelegramUserRepository;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 import static com.src.choosebotapi.data.model.UserStatus.EnterFullName;
-import static com.src.choosebotapi.data.model.UserStatus.NotRegistered;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -42,14 +40,15 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
         Long chatId = telegramMessage.getChat().getId();
 
         if (status == EnterFullName) {
-            CompletableFuture.completedFuture(enterFullUserName(telegramUser, messageText));
+            enterFullUserName(telegramUser, messageText);
         }
 
     }
 
-    private TelegramUser enterFullUserName(TelegramUser telegramUser, String messageText) {
+    @Async
+    void enterFullUserName(TelegramUser telegramUser, String messageText) {
         telegramUser.setFullName(messageText.trim());
-        return telegramUserRepository.save(telegramUser);
+        CompletableFuture.runAsync(() -> telegramUserRepository.save(telegramUser));
     }
 
 }
