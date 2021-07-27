@@ -17,7 +17,7 @@ import java.util.List;
 public class PromoCode extends DefaultEntity {
     @Column(nullable = false)
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "promo_code_generator")
     Long id;
 
     @NotNull String value;

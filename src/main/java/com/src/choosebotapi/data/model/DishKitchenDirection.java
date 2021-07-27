@@ -7,23 +7,21 @@ import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-@Entity(name = "credential")
+@Entity(name = "dish_kitchen_direction")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
 @Table
 @Getter
 @Setter
-public class Credential extends DefaultEntity{
+public class DishKitchenDirection extends DefaultEntity {
 
     @Column(nullable = false)
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "credential_generator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "dish_kitchen_direction_generator")
     Long id;
 
-    @NotNull @NotEmpty(message = "login must be filled")
     @Column(unique = true)
-    String login;
-
-    @NotEmpty @NotNull String password;
+    @NotEmpty @NotNull
+    String name;
 }

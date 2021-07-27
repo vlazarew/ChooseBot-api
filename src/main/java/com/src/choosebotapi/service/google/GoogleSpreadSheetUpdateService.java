@@ -5,8 +5,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.src.choosebotapi.data.model.GoogleSpreadSheet;
-import com.src.choosebotapi.data.repository.GoogleSpreadSheetRepository;
+import com.src.choosebotapi.data.model.*;
+import com.src.choosebotapi.data.repository.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
@@ -14,7 +14,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriTemplate;
 
 import javax.imageio.ImageIO;
-import javax.persistence.LockModeType;
 import java.awt.*;
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayOutputStream;
@@ -56,6 +54,21 @@ public class GoogleSpreadSheetUpdateService {
 
     @Autowired
     GoogleSpreadSheetRepository googleSpreadSheetRepository;
+
+    @Autowired
+    DishCategoryRepository dishCategoryRepository;
+
+    @Autowired
+    DishKitchenDirectionRepository dishKitchenDirectionRepository;
+
+    @Autowired
+    DishTypeRepository dishTypeRepository;
+
+    @Autowired
+    RestaurantRepository restaurantRepository;
+
+    @Autowired
+    DishRepository dishRepository;
 
     @Getter
     @Value("${google.key}")
@@ -107,18 +120,16 @@ public class GoogleSpreadSheetUpdateService {
 
     }
 
-    void parseSpreadSheet(HttpClient client, JsonParser parser, JsonArray rows, int index) {
+    private void parseSpreadSheet(HttpClient client, JsonParser parser, JsonArray rows, int index) {
         try {
             JsonArray rowValues = rows.get(index).getAsJsonArray();
-            CompletableFuture.runAsync(() -> getRowValues(client, parser, rowValues));
+            getRowValues(client, parser, rowValues);
         } catch (Exception e) {
             log.error(e);
         }
     }
 
-    @Async
-    @Transactional
-    void getRowValues(HttpClient client, JsonParser parser, JsonArray rowValues) {
+    private void getRowValues(HttpClient client, JsonParser parser, JsonArray rowValues) {
         Long unixTimeCreateRecord = getUnixTimeCreateRecord(rowValues);
         String bloggerNickname = getPossibleValue(rowValues, 1);
         String restaurantName = getPossibleValue(rowValues, 3);
@@ -136,41 +147,122 @@ public class GoogleSpreadSheetUpdateService {
 //        });
     }
 
-    @Transactional
-    void checkRowInDB(JsonArray rowValues, Long unixTimeCreateRecord, String bloggerNickname, String restaurantName, String dishName) {
+    private void checkRowInDB(JsonArray rowValues, Long unixTimeCreateRecord, String bloggerNickname, String restaurantName, String dishName) {
         Optional<GoogleSpreadSheet> itemInDB = googleSpreadSheetRepository
                 .findByBloggerNicknameAndDateTimeOfRecordAndRestaurantNameAndDishName(bloggerNickname, unixTimeCreateRecord,
                         restaurantName, dishName);
-
-        String bloggerURL = getPossibleValue(rowValues, 2);
-        String restaurantAddress = getPossibleValue(rowValues, 4);
-        String dishDescription = getPossibleValue(rowValues, 6);
-        Float dishPrice = Float.parseFloat(getPossibleValue(rowValues, 7).replaceAll(" ", ""));
-        String dishCategory = getPossibleValue(rowValues, 8);
-        String dishKitchenDirection = getPossibleValue(rowValues, 9);
-        String dishType = getPossibleValue(rowValues, 10);
-        String dishPhotoLink = getPossibleValue(rowValues, 11);
-
 //        URI photoUrl = getPhotoUrl(dishPhotoLink.substring(dishPhotoLink.indexOf(linkMatcher) + linkMatcher.length()));
 
 
         if (itemInDB.isEmpty()) {
-            GoogleSpreadSheet resultItem = new GoogleSpreadSheet();
-            resultItem.setDateTimeOfRecord(unixTimeCreateRecord);
-            resultItem.setBloggerNickname(bloggerNickname);
-            resultItem.setBloggerUrl(bloggerURL);
-            resultItem.setRestaurantName(restaurantName);
-            resultItem.setRestaurantAddress(restaurantAddress);
-            resultItem.setDishName(dishName);
-            resultItem.setDishDescription(dishDescription);
-            resultItem.setDishPrice(dishPrice);
-            resultItem.setDishCategory(dishCategory);
-            resultItem.setDishKitchen(dishKitchenDirection);
-            resultItem.setDishType(dishType);
-            resultItem.setDishPhotoUrl(dishPhotoLink);
+            String bloggerURL = getPossibleValue(rowValues, 2);
+            String restaurantAddress = getPossibleValue(rowValues, 4);
+            String dishDescription = getPossibleValue(rowValues, 6);
+            Float dishPrice = Float.parseFloat(getPossibleValue(rowValues, 7));
+            String dishCategory = getPossibleValue(rowValues, 8);
+            String dishKitchenDirection = getPossibleValue(rowValues, 9);
+            String dishType = getPossibleValue(rowValues, 10);
+            String dishPhotoLink = getPossibleValue(rowValues, 11);
 
-            googleSpreadSheetRepository.save(resultItem);
+            saveGoogleSpreadSheetRow(unixTimeCreateRecord, bloggerNickname, restaurantName, dishName, bloggerURL, restaurantAddress, dishDescription, dishPrice, dishCategory, dishKitchenDirection, dishType, dishPhotoLink);
+
+            DishCategory dishCategoryEntity = saveDishCategory(dishCategory);
+            DishType dishTypeEntity = saveDishType(dishType);
+            DishKitchenDirection dishKitchenDirectionEntity = saveDishKitchenDirection(dishKitchenDirection);
+            Restaurant restaurant = saveRestaurant(restaurantName, restaurantAddress);
+            saveDish(dishName, dishDescription, dishPrice, dishCategoryEntity, dishTypeEntity, dishKitchenDirectionEntity, restaurant);
         }
+    }
+
+    @Transactional
+    void saveDish(String dishName, String dishDescription, Float dishPrice, DishCategory dishCategoryEntity, DishType dishTypeEntity, DishKitchenDirection dishKitchenDirectionEntity, Restaurant restaurant) {
+        Dish dish = dishRepository.getDishByNameAndRestaurant_NameAndRestaurant_Address(dishName, restaurant.getName(), restaurant.getAddress())
+                .orElseGet(() -> {
+                    Dish dishDB = new Dish();
+                    dishDB.setName(dishName);
+                    dishDB.setDescription(dishDescription);
+                    dishDB.setPrice(dishPrice);
+                    dishDB.setCategory(dishCategoryEntity);
+                    dishDB.setType(dishTypeEntity);
+                    dishDB.setKitchenDirection(dishKitchenDirectionEntity);
+                    dishDB.setRestaurant(restaurant);
+                    return dishRepository.save(dishDB);
+                });
+    }
+
+    @Transactional
+    Restaurant saveRestaurant(String restaurantName, String restaurantAddress) {
+        return restaurantRepository.findByNameAndAddress(restaurantName, restaurantAddress)
+                .orElseGet(() -> {
+                    Restaurant restaurantDB = new Restaurant();
+                    restaurantDB.setName(restaurantName);
+                    restaurantDB.setAddress(restaurantAddress);
+                    return restaurantRepository.save(restaurantDB);
+                });
+    }
+
+    @Transactional
+    DishKitchenDirection saveDishKitchenDirection(String dishKitchenDirection) {
+        DishKitchenDirection dishKitchenDirectionEntity = null;
+        if (!dishKitchenDirection.equals("")) {
+            dishKitchenDirectionEntity = dishKitchenDirectionRepository.findByName(dishKitchenDirection)
+                    .orElseGet(() -> {
+                        DishKitchenDirection dishKitchenDirectionDB = new DishKitchenDirection();
+                        dishKitchenDirectionDB.setName(dishKitchenDirection);
+                        return dishKitchenDirectionRepository.save(dishKitchenDirectionDB);
+                    });
+        }
+        return dishKitchenDirectionEntity;
+    }
+
+    @Transactional
+    DishType saveDishType(String dishType) {
+        DishType dishTypeEntity = null;
+        if (!dishType.equals("")) {
+            dishTypeEntity = dishTypeRepository.findByName(dishType)
+                    .orElseGet(() -> {
+                        DishType dishTypeDB = new DishType();
+                        dishTypeDB.setName(dishType);
+                        return dishTypeRepository.save(dishTypeDB);
+                    });
+        }
+        return dishTypeEntity;
+    }
+
+    @Transactional
+    DishCategory saveDishCategory(String dishCategory) {
+        DishCategory dishCategoryEntity = null;
+        if (!dishCategory.equals("")) {
+            dishCategoryEntity = dishCategoryRepository.findByName(dishCategory)
+                    .orElseGet(() -> {
+                        DishCategory dishCategoryDB = new DishCategory();
+                        dishCategoryDB.setName(dishCategory);
+                        return dishCategoryRepository.save(dishCategoryDB);
+                    });
+        }
+        return dishCategoryEntity;
+    }
+
+    @Async
+    @Transactional
+    void saveGoogleSpreadSheetRow(Long unixTimeCreateRecord, String bloggerNickname, String restaurantName, String dishName,
+                                  String bloggerURL, String restaurantAddress, String dishDescription, Float dishPrice,
+                                  String dishCategory, String dishKitchenDirection, String dishType, String dishPhotoLink) {
+        GoogleSpreadSheet resultItem = new GoogleSpreadSheet();
+        resultItem.setDateTimeOfRecord(unixTimeCreateRecord);
+        resultItem.setBloggerNickname(bloggerNickname);
+        resultItem.setBloggerUrl(bloggerURL);
+        resultItem.setRestaurantName(restaurantName);
+        resultItem.setRestaurantAddress(restaurantAddress);
+        resultItem.setDishName(dishName);
+        resultItem.setDishDescription(dishDescription);
+        resultItem.setDishPrice(dishPrice);
+        resultItem.setDishCategory(dishCategory);
+        resultItem.setDishKitchen(dishKitchenDirection);
+        resultItem.setDishType(dishType);
+        resultItem.setDishPhotoUrl(dishPhotoLink);
+
+        googleSpreadSheetRepository.save(resultItem);
     }
 
     @Async
@@ -201,7 +293,7 @@ public class GoogleSpreadSheetUpdateService {
 
     private String getPossibleValue(JsonArray rowValues, int index) {
         try {
-            return rowValues.get(index).getAsString();
+            return rowValues.get(index).getAsString().trim();
         } catch (Exception e) {
             log.error("Error with parsing Google Spreadsheet data: " + e);
             return "";
@@ -210,7 +302,7 @@ public class GoogleSpreadSheetUpdateService {
     }
 
     private Long getUnixTimeCreateRecord(JsonArray rowValues) {
-        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss");
+        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         Date date = null;
         Long unixTimeCreateRecord = null;
         try {

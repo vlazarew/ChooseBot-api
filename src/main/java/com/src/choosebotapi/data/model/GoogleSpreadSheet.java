@@ -14,7 +14,7 @@ import javax.persistence.*;
 @Setter
 public class GoogleSpreadSheet extends DefaultEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "google_spreadsheet_generator")
     Long id;
 
     Long dateTimeOfRecord;

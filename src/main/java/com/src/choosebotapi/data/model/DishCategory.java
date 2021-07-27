@@ -18,7 +18,7 @@ public class DishCategory extends DefaultEntity {
 
     @Column(nullable = false)
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "dish_category_generator")
     Long id;
 
     @Column(unique = true)

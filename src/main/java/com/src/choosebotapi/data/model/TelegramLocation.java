@@ -15,7 +15,7 @@ import javax.persistence.*;
 public class TelegramLocation extends AbstractTelegramEntity {
     @Id
     @Column(nullable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "telegram_location_generator")
     Long id;
 
     @Column(name = "longitude")

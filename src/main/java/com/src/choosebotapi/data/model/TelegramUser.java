@@ -34,6 +34,6 @@ public class TelegramUser extends AbstractTelegramEntity {
     String languageCode;
     Boolean isBot;
 
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @OneToOne(cascade = CascadeType.MERGE)
     TelegramLocation location;
 }
