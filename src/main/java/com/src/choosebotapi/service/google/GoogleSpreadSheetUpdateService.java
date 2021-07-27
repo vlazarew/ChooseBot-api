@@ -5,20 +5,26 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.src.choosebotapi.data.model.GoogleSpreadSheet;
+import com.src.choosebotapi.data.repository.GoogleSpreadSheetRepository;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriTemplate;
 
 import javax.imageio.ImageIO;
+import javax.persistence.LockModeType;
 import java.awt.*;
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayOutputStream;
@@ -34,6 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Log4j2
@@ -46,6 +53,9 @@ public class GoogleSpreadSheetUpdateService {
 
     final long updatePeriod = 5000;
     final String linkMatcher = "?id=";
+
+    @Autowired
+    GoogleSpreadSheetRepository googleSpreadSheetRepository;
 
     @Getter
     @Value("${google.key}")
@@ -87,8 +97,7 @@ public class GoogleSpreadSheetUpdateService {
                         }
 
                         for (int index = 1; index < rows.size(); index++) {
-                            int finalIndex = index;
-                            CompletableFuture.runAsync(() -> parseSpreadSheet(client, parser, rows, finalIndex));
+                            parseSpreadSheet(client, parser, rows, index);
                         }
                         return null;
                     }
@@ -98,39 +107,70 @@ public class GoogleSpreadSheetUpdateService {
 
     }
 
-    @Async
     void parseSpreadSheet(HttpClient client, JsonParser parser, JsonArray rows, int index) {
         try {
             JsonArray rowValues = rows.get(index).getAsJsonArray();
-            getRowValues(client, parser, rowValues);
+            CompletableFuture.runAsync(() -> getRowValues(client, parser, rowValues));
         } catch (Exception e) {
             log.error(e);
         }
     }
 
-    private void getRowValues(HttpClient client, JsonParser parser, JsonArray rowValues) {
+    @Async
+    @Transactional
+    void getRowValues(HttpClient client, JsonParser parser, JsonArray rowValues) {
         Long unixTimeCreateRecord = getUnixTimeCreateRecord(rowValues);
-
         String bloggerNickname = getPossibleValue(rowValues, 1);
-        String bloggerURL = getPossibleValue(rowValues, 2);
         String restaurantName = getPossibleValue(rowValues, 3);
-        String restaurantAddress = getPossibleValue(rowValues, 4);
         String dishName = getPossibleValue(rowValues, 5);
+
+        checkRowInDB(rowValues, unixTimeCreateRecord, bloggerNickname, restaurantName, dishName);
+
+
+//        HttpRequest photoRequest = HttpRequest.newBuilder(photoUrl).header("Accept", "application/json").build();
+//        CompletableFuture<byte[]> photoBytes = getPhotoBytesFuture(client, parser, photoRequest);
+
+//        photoBytes.thenApply(bytes -> {
+//            boolean check = true;
+//            return null;
+//        });
+    }
+
+    @Transactional
+    void checkRowInDB(JsonArray rowValues, Long unixTimeCreateRecord, String bloggerNickname, String restaurantName, String dishName) {
+        Optional<GoogleSpreadSheet> itemInDB = googleSpreadSheetRepository
+                .findByBloggerNicknameAndDateTimeOfRecordAndRestaurantNameAndDishName(bloggerNickname, unixTimeCreateRecord,
+                        restaurantName, dishName);
+
+        String bloggerURL = getPossibleValue(rowValues, 2);
+        String restaurantAddress = getPossibleValue(rowValues, 4);
         String dishDescription = getPossibleValue(rowValues, 6);
-//                            Float dishPrice = Float.parseFloat(getPossibleValue(rowValues, 7));
-        String dishPhotoLink = getPossibleValue(rowValues, 8);
-        String dishCategory = getPossibleValue(rowValues, 9);
-        String dishKitchenDirection = getPossibleValue(rowValues, 10);
-        String dishType = getPossibleValue(rowValues, 11);
+        Float dishPrice = Float.parseFloat(getPossibleValue(rowValues, 7).replaceAll(" ", ""));
+        String dishCategory = getPossibleValue(rowValues, 8);
+        String dishKitchenDirection = getPossibleValue(rowValues, 9);
+        String dishType = getPossibleValue(rowValues, 10);
+        String dishPhotoLink = getPossibleValue(rowValues, 11);
 
-        URI photoUrl = getPhotoUrl(dishPhotoLink.substring(dishPhotoLink.indexOf(linkMatcher) + linkMatcher.length()));
-        HttpRequest photoRequest = HttpRequest.newBuilder(photoUrl).header("Accept", "application/json").build();
-        CompletableFuture<byte[]> photoBytes = getPhotoBytesFuture(client, parser, photoRequest);
+//        URI photoUrl = getPhotoUrl(dishPhotoLink.substring(dishPhotoLink.indexOf(linkMatcher) + linkMatcher.length()));
 
-        photoBytes.thenApply(bytes -> {
-            boolean check = true;
-            return null;
-        });
+
+        if (itemInDB.isEmpty()) {
+            GoogleSpreadSheet resultItem = new GoogleSpreadSheet();
+            resultItem.setDateTimeOfRecord(unixTimeCreateRecord);
+            resultItem.setBloggerNickname(bloggerNickname);
+            resultItem.setBloggerUrl(bloggerURL);
+            resultItem.setRestaurantName(restaurantName);
+            resultItem.setRestaurantAddress(restaurantAddress);
+            resultItem.setDishName(dishName);
+            resultItem.setDishDescription(dishDescription);
+            resultItem.setDishPrice(dishPrice);
+            resultItem.setDishCategory(dishCategory);
+            resultItem.setDishKitchen(dishKitchenDirection);
+            resultItem.setDishType(dishType);
+            resultItem.setDishPhotoUrl(dishPhotoLink);
+
+            googleSpreadSheetRepository.save(resultItem);
+        }
     }
 
     @Async
