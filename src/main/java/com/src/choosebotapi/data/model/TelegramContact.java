@@ -22,7 +22,7 @@ public class TelegramContact extends AbstractTelegramEntity {
     String firstName;
     String lastName;
 
-    @OneToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     TelegramUser user;
 

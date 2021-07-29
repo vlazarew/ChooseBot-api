@@ -28,19 +28,18 @@ public class Dish extends DefaultEntity {
 
     @NotNull
     @JoinColumn(name = "dish_category")
-    @OneToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.MERGE)
     DishCategory category;
 
     @JoinColumn(name = "dish_type")
-    @OneToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.MERGE)
     DishType type;
 
     @JoinColumn(name = "dish_kitchen_direction")
-    @OneToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.MERGE)
     DishKitchenDirection kitchenDirection;
 
-    @JoinColumn(name = "restaurant")
-    @OneToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.MERGE)
     Restaurant restaurant;
 
     @DecimalMin("0") @Positive @NotNull Float price;

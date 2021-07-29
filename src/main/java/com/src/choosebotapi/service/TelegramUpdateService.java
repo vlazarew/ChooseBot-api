@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Location;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -115,7 +116,7 @@ public class TelegramUpdateService {
                     TelegramLocation transformedLocation = telegramLocationMapper.toEntity(location);
                     transformedLocation.setUser(user);
 
-                    user.setLocation(transformedLocation);
+                    user.setLocation(List.of(transformedLocation));
                     userRepository.save(user);
 
                     return telegramLocationRepository.save(transformedLocation);

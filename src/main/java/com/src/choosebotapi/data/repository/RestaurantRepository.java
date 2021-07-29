@@ -10,4 +10,6 @@ import java.util.Optional;
 @RepositoryRestController
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     Optional<Restaurant> findByNameAndAddress(@NotNull String name, String address);
+
+    Optional<Restaurant> findByNameAndLongitudeAndLatitude(@NotNull String name, Float longitude, Float latitude);
 }

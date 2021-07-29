@@ -9,6 +9,7 @@ import com.src.choosebotapi.data.model.*;
 import com.src.choosebotapi.data.repository.*;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Synchronized;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -147,6 +148,7 @@ public class GoogleSpreadSheetUpdateService {
 //        });
     }
 
+    @Synchronized
     private void checkRowInDB(JsonArray rowValues, Long unixTimeCreateRecord, String bloggerNickname, String restaurantName, String dishName) {
         Optional<GoogleSpreadSheet> itemInDB = googleSpreadSheetRepository
                 .findByBloggerNicknameAndDateTimeOfRecordAndRestaurantNameAndDishName(bloggerNickname, unixTimeCreateRecord,
@@ -176,7 +178,7 @@ public class GoogleSpreadSheetUpdateService {
 
     @Transactional
     void saveDish(String dishName, String dishDescription, Float dishPrice, DishCategory dishCategoryEntity, DishType dishTypeEntity, DishKitchenDirection dishKitchenDirectionEntity, Restaurant restaurant) {
-        Dish dish = dishRepository.getDishByNameAndRestaurant_NameAndRestaurant_Address(dishName, restaurant.getName(), restaurant.getAddress())
+        dishRepository.getDishByNameAndRestaurant_NameAndRestaurant_Address(dishName, restaurant.getName(), restaurant.getAddress())
                 .orElseGet(() -> {
                     Dish dishDB = new Dish();
                     dishDB.setName(dishName);
@@ -197,7 +199,10 @@ public class GoogleSpreadSheetUpdateService {
                     Restaurant restaurantDB = new Restaurant();
                     restaurantDB.setName(restaurantName);
                     restaurantDB.setAddress(restaurantAddress);
-                    return restaurantRepository.save(restaurantDB);
+                    HashMap<String, Float> coordinates = restaurantDB.getCoordinatesFromYandex();
+
+                    return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude")
+                            , coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(restaurantDB));
                 });
     }
 

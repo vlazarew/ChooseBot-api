@@ -24,19 +24,19 @@ public class TelegramMessage extends AbstractTelegramEntity {
     String text;
 
     @NotNull
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "from_id")
     TelegramUser from;
 
     LocalDateTime date;
 
-    @OneToOne(cascade = CascadeType.MERGE)
+    @OneToOne(cascade = CascadeType.ALL)
     TelegramContact contact;
 
-    @OneToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.ALL)
     TelegramLocation location;
 
-    @OneToOne(cascade = CascadeType.MERGE)
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "chat_id")
     TelegramChat chat;
 }

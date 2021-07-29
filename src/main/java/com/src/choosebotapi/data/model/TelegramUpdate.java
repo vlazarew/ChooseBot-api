@@ -18,7 +18,7 @@ public class TelegramUpdate extends AbstractTelegramEntity {
     @Id
     Long id;
 
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "message_id")
     TelegramMessage message;
 }

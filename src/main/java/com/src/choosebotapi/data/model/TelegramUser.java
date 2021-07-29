@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Entity(name = "telegram_user")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -34,6 +35,6 @@ public class TelegramUser extends AbstractTelegramEntity {
     String languageCode;
     Boolean isBot;
 
-    @OneToOne(cascade = CascadeType.MERGE)
-    TelegramLocation location;
+    @OneToMany(cascade = CascadeType.ALL)
+    List<TelegramLocation> location;
 }
