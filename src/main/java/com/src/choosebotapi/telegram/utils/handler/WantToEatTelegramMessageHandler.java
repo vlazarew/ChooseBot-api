@@ -29,11 +29,11 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
     @Value("${telegram.selectAverageCheck}")
     String selectAverageCheck;
 
-    @Value("${telegram.selectDishDirection}")
-    String selectDishDirection;
+    @Value("${telegram.selectDishCategory}")
+    String selectDishCategory;
 
-    @Value("${telegram.selectHealthyDishSubDirection}")
-    String selectHealthyDishSubDirection;
+    @Value("${telegram.selectDishKitchenDirection}")
+    String selectDishKitchenDirection;
 
     @Override
     @Async
@@ -56,20 +56,22 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
             handleEnterDishName(chatId);
         } else if (status == SelectAverageCheck) {
             handleSelectAverageCheck(chatId);
-        } else if (status == SelectDishDirection || status == SelectHealthyDishSubDirection) {
-            handleSelectDishDirection(chatId, messageText);
+        } else if (status == SelectDishCategory) {
+            handleSelectDishCategory(chatId, messageText);
+        } else if (status == SelectDishKitchenDirection) {
+            handleSelectDishKitchenDirection(chatId, messageText);
         }
 
     }
 
     @Async
-    void handleSelectDishDirection(Long chatId, String messageText) {
-        if (messageText.startsWith(HEALTHY_DISH_DIRECTION)) {
-            sendSelectHealthyDishSubDirection(chatId, selectHealthyDishSubDirection, SelectHealthyDishSubDirection);
-        } else {
-//            sendTextMessageWithoutKeyboard(chatId, "Result from database currently not implemented", GetResultRestaurantFromDB);
-            sendMessageWantToEat(chatId, "Result from database currently not implemented", WantToEat);
-        }
+    void handleSelectDishCategory(Long chatId, String messageText) {
+        sendSelectDishKitchenDirection(chatId, selectDishKitchenDirection, SelectDishKitchenDirection);
+    }
+
+    @Async
+    void handleSelectDishKitchenDirection(Long chatId, String messageText) {
+        sendMessageWantToEat(chatId, "Choosed: " + messageText + ". Result from database currently not implemented", WantToEat);
     }
 
     @Async
@@ -82,7 +84,7 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
         if (messageText.startsWith(ENTER_DISH_NAME)) {
             sendTextMessageWithoutKeyboard(chatId, enterDishName, EnterDishName);
         } else if (messageText.startsWith(GET_DISH_RECOMMENDATION)) {
-            sendSelectDishDirection(chatId, selectDishDirection, SelectDishDirection);
+            sendSelectDishCategory(chatId, selectDishCategory, SelectDishCategory);
         }
     }
 

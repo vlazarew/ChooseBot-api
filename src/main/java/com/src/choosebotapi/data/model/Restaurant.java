@@ -7,20 +7,19 @@ import lombok.extern.log4j.Log4j2;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.io.Serializable;
 import java.util.HashMap;
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
-class RestaurantId implements Serializable {
-    String name;
-    Float longitude;
-    Float latitude;
-}
+//@FieldDefaults(level = AccessLevel.PRIVATE)
+//@AllArgsConstructor
+//@NoArgsConstructor
+//@Getter
+//@Setter
+//@EqualsAndHashCode
+//class RestaurantId implements Serializable {
+//    String name;
+//    Float longitude;
+//    Float latitude;
+//}
 
 @Entity(name = "restaurant")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -29,24 +28,27 @@ class RestaurantId implements Serializable {
 @Table
 @Getter
 @Setter
-@IdClass(RestaurantId.class)
+//@IdClass(RestaurantId.class)
 @Log4j2
 public class Restaurant extends DefaultEntity {
 
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "restaurant_generator")
+    @Id
     Long id;
 
     @NotNull
-    @Id
+//    @Id
     String name;
 
     String description;
 
     String address;
 
-    @Id
+    String averageCheck;
+
+    //    @Id
     Float longitude;
-    @Id
+    //    @Id
     Float latitude;
 
     @Lob

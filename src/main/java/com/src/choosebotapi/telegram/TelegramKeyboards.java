@@ -116,9 +116,9 @@ public class TelegramKeyboards {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         KeyboardRow keyboardFirstRow = new KeyboardRow();
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.DOWN_1_5K));
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.FROM_1_5K_TO_2_5K));
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.UPPER_2_5K));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.DOWN_1K));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.FROM_1K_TO_2K));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.UPPER_2K));
         keyboard.add(keyboardFirstRow);
 
         replyKeyboardMarkup.thenCompose(
@@ -127,16 +127,29 @@ public class TelegramKeyboards {
         return replyKeyboardMarkup;
     }
 
-    public CompletableFuture<ReplyKeyboardMarkup> getSelectDishDirectionKeyboardMarkup() {
+    public CompletableFuture<ReplyKeyboardMarkup> getSelectDishCategoryKeyboardMarkup() {
         CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
                 CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         KeyboardRow keyboardFirstRow = new KeyboardRow();
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.VEGAN_DISH_DIRECTION));
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.HEALTHY_DISH_DIRECTION));
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.COMMON_DISH_DIRECTION));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SNACK_CATEGORY));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SALAD_CATEGORY));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SOUP_CATEGORY));
+
+        KeyboardRow keyboardSecondRow = new KeyboardRow();
+        keyboardSecondRow.add(new KeyboardButton(telegramHandler.HOT_DISHES_CATEGORY));
+        keyboardSecondRow.add(new KeyboardButton(telegramHandler.DESSERT_CATEGORY));
+        keyboardSecondRow.add(new KeyboardButton(telegramHandler.ALCOHOLIC_DRINKS_CATEGORY));
+
+        KeyboardRow keyboardThirdRow = new KeyboardRow();
+        keyboardThirdRow.add(new KeyboardButton(telegramHandler.SOFT_DRINKS_CATEGORY));
+        keyboardThirdRow.add(new KeyboardButton(telegramHandler.SUSHI_ROLLS_CATEGORY));
+        keyboardThirdRow.add(new KeyboardButton(telegramHandler.BREAKFAST_CATEGORY));
+
         keyboard.add(keyboardFirstRow);
+        keyboard.add(keyboardSecondRow);
+        keyboard.add(keyboardThirdRow);
 
         replyKeyboardMarkup.thenCompose(
                 replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
@@ -144,16 +157,25 @@ public class TelegramKeyboards {
         return replyKeyboardMarkup;
     }
 
-    public CompletableFuture<ReplyKeyboardMarkup> getSelectHealthyDishSubDirectionKeyboardMarkup() {
+    public CompletableFuture<ReplyKeyboardMarkup> getSelectDishKitchenDirectionKeyboardMarkup() {
         CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
                 CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         KeyboardRow keyboardFirstRow = new KeyboardRow();
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.HEALTHY_GLUTEN_FREE_DISH_DIRECTION));
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.HEALTHY_LACTOSE_FREE_DISH_DIRECTION));
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.HEALTHY_KETO_RESTAURANT_DISH_DIRECTION));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.EUROPEAN_KITCHEN_DIRECTION));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.RUSSIAN_KITCHEN_DIRECTION));
+
+        KeyboardRow keyboardSecondRow = new KeyboardRow();
+        keyboardSecondRow.add(new KeyboardButton(telegramHandler.CAUCASIAN_KITCHEN_DIRECTION));
+        keyboardSecondRow.add(new KeyboardButton(telegramHandler.ITALIAN_KITCHEN_DIRECTION));
+
+        KeyboardRow keyboardThirdRow = new KeyboardRow();
+        keyboardThirdRow.add(new KeyboardButton(telegramHandler.ASIAN_KITCHEN_DIRECTION));
+
         keyboard.add(keyboardFirstRow);
+        keyboard.add(keyboardSecondRow);
+        keyboard.add(keyboardThirdRow);
 
         replyKeyboardMarkup.thenCompose(
                 replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));

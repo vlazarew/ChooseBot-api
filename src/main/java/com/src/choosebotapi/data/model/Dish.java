@@ -31,10 +31,6 @@ public class Dish extends DefaultEntity {
     @ManyToOne(cascade = CascadeType.MERGE)
     DishCategory category;
 
-    @JoinColumn(name = "dish_type")
-    @ManyToOne(cascade = CascadeType.MERGE)
-    DishType type;
-
     @JoinColumn(name = "dish_kitchen_direction")
     @ManyToOne(cascade = CascadeType.MERGE)
     DishKitchenDirection kitchenDirection;

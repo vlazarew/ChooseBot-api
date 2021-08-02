@@ -6,18 +6,18 @@ import lombok.experimental.FieldDefaults;
 import javax.persistence.*;
 import java.io.Serializable;
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
-class GoogleSpreadSheetId implements Serializable {
-    Long dateTimeOfRecord;
-    String bloggerNickname;
-    String restaurantName;
-    String dishName;
-}
+//@FieldDefaults(level = AccessLevel.PRIVATE)
+//@AllArgsConstructor
+//@NoArgsConstructor
+//@Getter
+//@Setter
+//@EqualsAndHashCode
+//class GoogleSpreadSheetId implements Serializable {
+//    Long dateTimeOfRecord;
+//    String bloggerNickname;
+//    String restaurantName;
+//    String dishName;
+//}
 
 @Entity(name = "google_spreadsheet")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -26,26 +26,27 @@ class GoogleSpreadSheetId implements Serializable {
 @Table
 @Getter
 @Setter
-@IdClass(GoogleSpreadSheetId.class)
+//@IdClass(GoogleSpreadSheetId.class)
 public class GoogleSpreadSheet extends DefaultEntity {
 
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "google_spreadsheet_generator")
+    @Id
     Long id;
 
-    @Id
+//    @Id
     Long dateTimeOfRecord;
-    @Id
+//    @Id
     String bloggerNickname;
     String bloggerUrl;
-    @Id
+//    @Id
     String restaurantName;
     String restaurantAddress;
-    @Id
+//    @Id
     String dishName;
     String dishDescription;
     Float dishPrice;
     String dishCategory;
     String dishKitchen;
-    String dishType;
+    String averageCheck;
     String dishPhotoUrl;
 }

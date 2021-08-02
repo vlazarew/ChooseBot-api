@@ -34,7 +34,7 @@ public class TelegramHandler implements TelegramMessageHandler {
     public TelegramUserRepository userRepository;
     @Autowired
     public TelegramChatRepository telegramChatRepository;
-    //    @Autowired
+    //        @Autowired
 //    public NotificationServiceSettingsRepository notificationServiceSettingsRepository;
     @Autowired
     public TelegramKeyboards telegramKeyboards;
@@ -83,32 +83,56 @@ public class TelegramHandler implements TelegramMessageHandler {
     @Value("${telegram.GET_DISH_RECOMMENDATION}")
     public String GET_DISH_RECOMMENDATION;
 
-    @Value("${telegram.DOWN_1_5K}")
-    public String DOWN_1_5K;
+    @Value("${telegram.DOWN_1K}")
+    public String DOWN_1K;
 
-    @Value("${telegram.FROM_1_5K_TO_2_5K}")
-    public String FROM_1_5K_TO_2_5K;
+    @Value("${telegram.FROM_1K_TO_2K}")
+    public String FROM_1K_TO_2K;
 
-    @Value("${telegram.UPPER_2_5K}")
-    public String UPPER_2_5K;
+    @Value("${telegram.UPPER_2K}")
+    public String UPPER_2K;
 
-    @Value("${telegram.VEGAN_DISH_DIRECTION}")
-    public String VEGAN_DISH_DIRECTION;
+    @Value("${telegram.SNACK_CATEGORY}")
+    public String SNACK_CATEGORY;
 
-    @Value("${telegram.HEALTHY_DISH_DIRECTION}")
-    public String HEALTHY_DISH_DIRECTION;
+    @Value("${telegram.SALAD_CATEGORY}")
+    public String SALAD_CATEGORY;
 
-    @Value("${telegram.COMMON_DISH_DIRECTION}")
-    public String COMMON_DISH_DIRECTION;
+    @Value("${telegram.SOUP_CATEGORY}")
+    public String SOUP_CATEGORY;
 
-    @Value("${telegram.HEALTHY_GLUTEN_FREE_DISH_DIRECTION}")
-    public String HEALTHY_GLUTEN_FREE_DISH_DIRECTION;
+    @Value("${telegram.HOT_DISHES_CATEGORY}")
+    public String HOT_DISHES_CATEGORY;
 
-    @Value("${telegram.HEALTHY_LACTOSE_FREE_DISH_DIRECTION}")
-    public String HEALTHY_LACTOSE_FREE_DISH_DIRECTION;
+    @Value("${telegram.DESSERT_CATEGORY}")
+    public String DESSERT_CATEGORY;
 
-    @Value("${telegram.HEALTHY_KETO_RESTAURANT_DISH_DIRECTION}")
-    public String HEALTHY_KETO_RESTAURANT_DISH_DIRECTION;
+    @Value("${telegram.ALCOHOLIC_DRINKS_CATEGORY}")
+    public String ALCOHOLIC_DRINKS_CATEGORY;
+
+    @Value("${telegram.SOFT_DRINKS_CATEGORY}")
+    public String SOFT_DRINKS_CATEGORY;
+
+    @Value("${telegram.SUSHI_ROLLS_CATEGORY}")
+    public String SUSHI_ROLLS_CATEGORY;
+
+    @Value("${telegram.BREAKFAST_CATEGORY}")
+    public String BREAKFAST_CATEGORY;
+
+    @Value("${telegram.EUROPEAN_KITCHEN_DIRECTION}")
+    public String EUROPEAN_KITCHEN_DIRECTION;
+
+    @Value("${telegram.RUSSIAN_KITCHEN_DIRECTION}")
+    public String RUSSIAN_KITCHEN_DIRECTION;
+
+    @Value("${telegram.ITALIAN_KITCHEN_DIRECTION}")
+    public String ITALIAN_KITCHEN_DIRECTION;
+
+    @Value("${telegram.CAUCASIAN_KITCHEN_DIRECTION}")
+    public String CAUCASIAN_KITCHEN_DIRECTION;
+
+    @Value("${telegram.ASIAN_KITCHEN_DIRECTION}")
+    public String ASIAN_KITCHEN_DIRECTION;
 
     @Override
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
@@ -157,15 +181,15 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    public void sendSelectDishDirection(Long chatId, String text, UserStatus status) {
-        telegramKeyboards.getSelectDishDirectionKeyboardMarkup().thenCompose(
+    public void sendSelectDishCategory(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getSelectDishCategoryKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
                         CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
         );
     }
 
-    public void sendSelectHealthyDishSubDirection(Long chatId, String text, UserStatus status) {
-        telegramKeyboards.getSelectHealthyDishSubDirectionKeyboardMarkup().thenCompose(
+    public void sendSelectDishKitchenDirection(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getSelectDishKitchenDirectionKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
                         CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
         );
