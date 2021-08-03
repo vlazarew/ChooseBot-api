@@ -34,7 +34,4 @@ public class TelegramUser extends AbstractTelegramEntity {
 
     String languageCode;
     Boolean isBot;
-
-    @OneToMany(cascade = CascadeType.ALL)
-    List<TelegramLocation> location;
 }

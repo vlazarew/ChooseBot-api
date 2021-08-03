@@ -13,7 +13,6 @@ import org.telegram.telegrambots.meta.api.objects.Location;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -27,6 +26,7 @@ public class TelegramUpdateService {
     TelegramUserRepository userRepository;
     TelegramContactRepository telegramContactRepository;
     TelegramLocationRepository telegramLocationRepository;
+    SessionRepository sessionRepository;
 
     TelegramUserMapper telegramUserMapper;
     TelegramChatMapper telegramChatMapper;
@@ -51,7 +51,7 @@ public class TelegramUpdateService {
             CompletableFuture<TelegramContact> telegramContact = hasContact ? saveFindContact(message, user) : null;
 
             // Сохранение локации
-            CompletableFuture<TelegramLocation> telegramLocation = hasLocation ? saveFindLocation(update, user) : null;
+            CompletableFuture<TelegramLocation> telegramLocation = hasLocation ? saveLocation(update, user) : null;
 
             // Запись истории сообщений
             return saveTelegramMessage(message, user, telegramChat.join(),
@@ -106,21 +106,21 @@ public class TelegramUpdateService {
     }
 
     @Async
-    CompletableFuture<TelegramLocation> saveFindLocation(Update update, TelegramUser user) {
+    CompletableFuture<TelegramLocation> saveLocation(Update update, TelegramUser user) {
         Location location = update.getMessage().getLocation();
-        float longitude = location.getLongitude().floatValue();
-        float latitude = location.getLatitude().floatValue();
+        return CompletableFuture.completedFuture(getTelegramLocation(user, location));
+    }
 
-        return CompletableFuture.completedFuture(telegramLocationRepository.findByLongitudeAndLatitude(longitude, latitude))
-                .thenApply(telegramLocation -> telegramLocation.orElseGet(() -> {
-                    TelegramLocation transformedLocation = telegramLocationMapper.toEntity(location);
-                    transformedLocation.setUser(user);
+    private TelegramLocation getTelegramLocation(TelegramUser user, Location location) {
+        TelegramLocation transformedLocation = telegramLocationMapper.toEntity(location);
+        transformedLocation = telegramLocationRepository.save(transformedLocation);
 
-                    user.setLocation(List.of(transformedLocation));
-                    userRepository.save(user);
+        Session newSession = new Session();
+        newSession.setLocation(transformedLocation);
+        newSession.setUser(user);
 
-                    return telegramLocationRepository.save(transformedLocation);
-                }));
+        sessionRepository.save(newSession);
+        return transformedLocation;
     }
 
 

@@ -43,6 +43,7 @@ public class GoogleSpreadSheet extends DefaultEntity {
     String restaurantAddress;
 //    @Id
     String dishName;
+    @Column(length = 1000, name = "description")
     String dishDescription;
     Float dishPrice;
     String dishCategory;

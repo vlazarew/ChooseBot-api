@@ -8,6 +8,7 @@ import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
+import java.util.List;
 
 @Entity(name = "dish")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -23,7 +24,11 @@ public class Dish extends DefaultEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "dish_generator")
     Long id;
 
-    @NotEmpty @NotNull String name;
+    @NotEmpty
+    @NotNull
+    String name;
+
+    @Column(length = 1000, name = "description")
     String description;
 
     @NotNull
@@ -42,4 +47,7 @@ public class Dish extends DefaultEntity {
 
     @Lob
     byte[] image;
+
+    @OneToMany
+    List<DishReview> reviewList;
 }

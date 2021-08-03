@@ -9,6 +9,7 @@ import com.src.choosebotapi.data.model.*;
 import com.src.choosebotapi.data.repository.*;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Synchronized;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +35,7 @@ import java.net.http.HttpResponse;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Log4j2
 @Service
@@ -87,6 +85,7 @@ public class GoogleSpreadSheetUpdateService {
 
     @Scheduled(fixedRate = updatePeriod)
     @Async
+    @Synchronized
     public void checkSpreadSheetUpdates() throws IOException, InterruptedException {
         URI url = getSpreadSheetUrl();
         HttpClient client = HttpClient.newHttpClient();
@@ -103,8 +102,8 @@ public class GoogleSpreadSheetUpdateService {
             return;
         }
 
-//                        for (int index = 1; index < rows.size(); index++) {
-        for (int index = 1; index < 10; index++) {
+        for (int index = 1; index < rows.size(); index++) {
+//        for (int index = 1; index < 500; index++) {
             parseSpreadSheet(client, parser, rows, index);
         }
 
@@ -263,7 +262,11 @@ public class GoogleSpreadSheetUpdateService {
 
     private String getPossibleValue(JsonArray rowValues, int index) {
         try {
-            return rowValues.get(index).getAsString().trim();
+            String lowerTargetWord = rowValues.get(index).getAsString().trim().toLowerCase(Locale.ROOT);
+            if (lowerTargetWord.isEmpty()) {
+                return "";
+            }
+            return lowerTargetWord.substring(0, 1).toUpperCase() + lowerTargetWord.substring(1);
         } catch (Exception e) {
             log.error("Error with parsing Google Spreadsheet data: " + e);
             return "";

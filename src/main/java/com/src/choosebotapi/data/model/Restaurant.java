@@ -40,6 +40,7 @@ public class Restaurant extends DefaultEntity {
 //    @Id
     String name;
 
+    @Column(length = 1000, name = "description")
     String description;
 
     String address;
@@ -57,7 +58,7 @@ public class Restaurant extends DefaultEntity {
     @Override
     public void toCreate() {
         super.toCreate();
-        getCoordinatesFromYandex();
+//        getCoordinatesFromYandex();
     }
 
     public HashMap<String, Float> getCoordinatesFromYandex() {
