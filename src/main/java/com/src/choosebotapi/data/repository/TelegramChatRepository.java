@@ -6,4 +6,5 @@ import org.springframework.data.rest.webmvc.RepositoryRestController;
 
 @RepositoryRestController
 public interface TelegramChatRepository extends CrudRepository<TelegramChat, Long> {
+    TelegramChat findByUserId(Integer id);
 }

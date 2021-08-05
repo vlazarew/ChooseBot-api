@@ -3,6 +3,7 @@ package com.src.choosebotapi.data.model;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.annotation.Lazy;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -40,11 +41,12 @@ public class Session extends DefaultEntity {
     @ManyToOne(cascade = CascadeType.ALL)
     Dish dish;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @Lazy
     List<Dish> dishesToSelect;
 
     @Min(value = 0)
-    Long dishIndexInList = 0L;
+    Integer dishIndexInList = 0;
 
     boolean sessionFinished = false;
     boolean notificationSend = false;

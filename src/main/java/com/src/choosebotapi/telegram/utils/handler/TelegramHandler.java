@@ -1,23 +1,29 @@
 package com.src.choosebotapi.telegram.utils.handler;
 
-import com.src.choosebotapi.data.model.TelegramUpdate;
-import com.src.choosebotapi.data.model.TelegramUser;
-import com.src.choosebotapi.data.model.UserStatus;
+import com.src.choosebotapi.data.model.*;
 import com.src.choosebotapi.data.repository.*;
 import com.src.choosebotapi.telegram.TelegramBot;
 import com.src.choosebotapi.telegram.TelegramKeyboards;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -42,10 +48,10 @@ public class TelegramHandler implements TelegramMessageHandler {
     public SessionRepository sessionRepository;
     @Autowired
     public TelegramLocationRepository telegramLocationRepository;
-//    @Autowired
-//    public NewsSettingsRepository newsSettingsRepository;
-//    @Autowired
-//    public NewsItemRepository newsItemRepository;
+    @Autowired
+    public DishCategoryRepository dishCategoryRepository;
+    @Autowired
+    public DishKitchenDirectionRepository dishKitchenDirectionRepository;
 //    @Autowired
 //    public TwitterSettingsRepository twitterSettingsRepository;
 //    @Autowired
@@ -132,6 +138,18 @@ public class TelegramHandler implements TelegramMessageHandler {
     @Value("${telegram.ASIAN_KITCHEN_DIRECTION}")
     public String ASIAN_KITCHEN_DIRECTION;
 
+    @Value("${telegram.PREVIOUS_DISH}")
+    public String PREVIOUS_DISH;
+
+    @Value("${telegram.NEXT_DISH}")
+    public String NEXT_DISH;
+
+    @Value("${telegram.SELECT_DISH}")
+    public String SELECT_DISH;
+
+    @Value("${telegram.EXIT_DISH}")
+    public String EXIT_DISH;
+
     @Override
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
     }
@@ -193,6 +211,40 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
+    public void sendSelectDishFromTop(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getSelectDishFromTopKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup -> {
+                    CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status));
+                    sendMessageAboutDish(chatId, replyKeyboardMarkup);
+                    return null;
+                }
+        );
+    }
+
+    @Transactional
+    void sendMessageAboutDish(Long chatId, ReplyKeyboardMarkup replyKeyboardMarkup) {
+        TelegramChat chat = telegramChatRepository.findById(chatId).get();
+        Session currentSession = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(chat.getUser().getId(), false, false);
+        Dish dishToPresent = currentSession.getDishesToSelect().get(currentSession.getDishIndexInList());
+        Restaurant restaurant = dishToPresent.getRestaurant();
+        String mainInfo = "*" + dishToPresent.getName() + "* / *" + restaurant.getName() + "* / " +
+                restaurant.getAverageCheck() + " / " + restaurant.getAddress();
+        String description = dishToPresent.getDescription() == null ? "" : dishToPresent.getDescription() + "\n";
+        String category = dishToPresent.getCategory().getName() == null ? "" : "*Категория*: " + dishToPresent.getCategory().getName() + "\n";
+        String kitchen = dishToPresent.getKitchenDirection().getName() == null ? "" : "*Кухня*: " + dishToPresent.getKitchenDirection().getName();
+
+        boolean hasAdditional = (!Objects.equals(description, "")) || (!category.equals("")) || (!kitchen.equals(""));
+        String resultMessage = mainInfo + (hasAdditional ? "\n\n" + description + category + kitchen : "");
+
+        byte[] image = dishToPresent.getImage();
+        if (image == null || image.length == 0) {
+            CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, resultMessage, replyKeyboardMarkup, null));
+        } else {
+            CompletableFuture.supplyAsync(() -> makeSendPhotoWithKeyboard(chatId, resultMessage, replyKeyboardMarkup))
+                    .thenCompose(sendPhoto -> CompletableFuture.runAsync(() -> executeSendingPhoto(chatId, image, sendPhoto)));
+        }
+    }
+
     @Override
     public void sendTextMessageReplyKeyboardMarkup(Long chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup,
                                                    UserStatus status) {
@@ -217,6 +269,25 @@ public class TelegramHandler implements TelegramMessageHandler {
             }
         });
 
+        updateStatus(chatId, status);
+    }
+
+    private void executeSendingPhoto(Long chatId, byte[] image, SendPhoto sendPhoto) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                File imageFile = makeFile(image);
+                sendPhoto.setPhoto(new InputFile(imageFile));
+                telegramBot.execute(sendPhoto);
+                imageFile.delete();
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        });
+
+        updateStatus(chatId, null);
+    }
+
+    private void updateStatus(Long chatId, UserStatus status) {
         if (status != null) {
             CompletableFuture.supplyAsync(() -> telegramChatRepository.findById(chatId)).thenCompose(
                     telegramChat -> {
@@ -254,5 +325,25 @@ public class TelegramHandler implements TelegramMessageHandler {
 
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
         return sendMessage;
+    }
+
+    private SendPhoto makeSendPhotoWithKeyboard(Long chatId, String caption, ReplyKeyboardMarkup replyKeyboardMarkup) {
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(String.valueOf(chatId));
+        sendPhoto.setCaption(caption);
+
+        sendPhoto.setReplyMarkup(replyKeyboardMarkup);
+        return sendPhoto;
+    }
+
+    private File makeFile(byte[] image) {
+        UUID uuid = UUID.randomUUID();
+        File imageFile = new File("photos/" + uuid);
+        try {
+            FileUtils.writeByteArrayToFile(imageFile, image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return imageFile;
     }
 }

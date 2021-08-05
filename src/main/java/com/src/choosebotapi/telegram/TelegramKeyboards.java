@@ -70,7 +70,6 @@ public class TelegramKeyboards {
         shareLocationButton.setRequestLocation(true);
 
         keyboardFirstRow.add(shareLocationButton);
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SKIP));
         keyboard.add(keyboardFirstRow);
 
         replyKeyboardMarkup.thenCompose(
@@ -177,6 +176,27 @@ public class TelegramKeyboards {
         keyboard.add(keyboardSecondRow);
         keyboard.add(keyboardThirdRow);
 
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
+        return replyKeyboardMarkup;
+    }
+
+    public CompletableFuture<ReplyKeyboardMarkup> getSelectDishFromTopKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.PREVIOUS_DISH));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.SELECT_DISH));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.NEXT_DISH));
+
+        KeyboardRow keyboardSecondRow = new KeyboardRow();
+        keyboardSecondRow.add(new KeyboardButton(telegramHandler.EXIT_DISH));
+
+        keyboard.add(keyboardFirstRow);
+        keyboard.add(keyboardSecondRow);
         replyKeyboardMarkup.thenCompose(
                 replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
 

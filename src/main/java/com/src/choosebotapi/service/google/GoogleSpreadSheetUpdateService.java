@@ -120,9 +120,9 @@ public class GoogleSpreadSheetUpdateService {
 
     private void getRowValues(HttpClient client, JsonParser parser, JsonArray rowValues) throws IOException, InterruptedException {
         Long unixTimeCreateRecord = getUnixTimeCreateRecord(rowValues);
-        String bloggerNickname = getPossibleValue(rowValues, 1);
-        String restaurantName = getPossibleValue(rowValues, 3);
-        String dishName = getPossibleValue(rowValues, 6);
+        String bloggerNickname = getPossibleValue(rowValues, 1, false);
+        String restaurantName = getPossibleValue(rowValues, 3, false);
+        String dishName = getPossibleValue(rowValues, 6, true);
 
         checkRowInDB(client, parser, rowValues, unixTimeCreateRecord, bloggerNickname, restaurantName, dishName);
     }
@@ -135,14 +135,14 @@ public class GoogleSpreadSheetUpdateService {
 
 
         if (itemInDB.isEmpty()) {
-            String bloggerURL = getPossibleValue(rowValues, 2);
-            String averageCheck = getPossibleValue(rowValues, 4);
-            String restaurantAddress = getPossibleValue(rowValues, 5);
-            String dishDescription = getPossibleValue(rowValues, 7);
-            Float dishPrice = Float.parseFloat(getPossibleValue(rowValues, 8));
-            String dishCategory = getPossibleValue(rowValues, 9);
-            String dishKitchenDirection = getPossibleValue(rowValues, 10);
-            String dishPhotoLink = getPossibleValue(rowValues, 11);
+            String bloggerURL = getPossibleValue(rowValues, 2, false);
+            String averageCheck = getPossibleValue(rowValues, 4, true);
+            String restaurantAddress = getPossibleValue(rowValues, 5, false);
+            String dishDescription = getPossibleValue(rowValues, 7, true);
+            Float dishPrice = Float.parseFloat(getPossibleValue(rowValues, 8, false));
+            String dishCategory = getPossibleValue(rowValues, 9, true);
+            String dishKitchenDirection = getPossibleValue(rowValues, 10, true);
+            String dishPhotoLink = getPossibleValue(rowValues, 11, false);
 
             saveGoogleSpreadSheetRow(unixTimeCreateRecord, bloggerNickname, restaurantName, dishName, bloggerURL,
                     restaurantAddress, dishDescription, dishPrice, dishCategory, dishKitchenDirection, averageCheck, dishPhotoLink);
@@ -151,11 +151,14 @@ public class GoogleSpreadSheetUpdateService {
             DishKitchenDirection dishKitchenDirectionEntity = saveDishKitchenDirection(dishKitchenDirection);
             Restaurant restaurant = saveRestaurant(restaurantName, restaurantAddress, averageCheck);
 
-
-//            URI photoUrl = getPhotoUrl(dishPhotoLink.substring(dishPhotoLink.indexOf(linkMatcher) + linkMatcher.length()));
-//            HttpRequest photoRequest = HttpRequest.newBuilder(photoUrl).header("Accept", "application/json").build();
-//            byte[] photoBytes = getPhotoBytes(client, parser, photoRequest);
             byte[] photoBytes = null;
+            try {
+                URI photoUrl = getPhotoUrl(dishPhotoLink.substring(dishPhotoLink.indexOf(linkMatcher) + linkMatcher.length()));
+                HttpRequest photoRequest = HttpRequest.newBuilder(photoUrl).header("Accept", "application/json").build();
+                photoBytes = getPhotoBytes(client, parser, photoRequest);
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
 
             saveDish(dishName, dishDescription, dishPrice, dishCategoryEntity, dishKitchenDirectionEntity,
                     restaurant, photoBytes);
@@ -262,13 +265,17 @@ public class GoogleSpreadSheetUpdateService {
         return baos.toByteArray();
     }
 
-    private String getPossibleValue(JsonArray rowValues, int index) {
+    private String getPossibleValue(JsonArray rowValues, int index, boolean makeLower) {
         try {
-            String lowerTargetWord = rowValues.get(index).getAsString().trim().toLowerCase(Locale.ROOT);
-            if (lowerTargetWord.isEmpty()) {
-                return "";
+            String resultString = rowValues.get(index).getAsString().trim();
+            if (makeLower) {
+                String lowerTargetWord = resultString.toLowerCase(Locale.ROOT);
+                if (lowerTargetWord.isEmpty()) {
+                    return "";
+                }
+                return lowerTargetWord.substring(0, 1).toUpperCase() + lowerTargetWord.substring(1);
             }
-            return lowerTargetWord.substring(0, 1).toUpperCase() + lowerTargetWord.substring(1);
+            return resultString;
         } catch (Exception e) {
             log.error("Error with parsing Google Spreadsheet data: " + e);
             return "";
@@ -281,7 +288,7 @@ public class GoogleSpreadSheetUpdateService {
         Date date = null;
         Long unixTimeCreateRecord = null;
         try {
-            date = dateFormat.parse(getPossibleValue(rowValues, 0));
+            date = dateFormat.parse(getPossibleValue(rowValues, 0, false));
         } catch (ParseException e) {
             e.printStackTrace();
         }
