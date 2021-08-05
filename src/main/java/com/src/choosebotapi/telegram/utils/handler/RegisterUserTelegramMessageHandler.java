@@ -27,9 +27,6 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
     @Value("${telegram.sharePhoneNumber}")
     String sharePhoneNumber;
 
-    @Value("${telegram.shareLocation}")
-    String shareLocation;
-
     @Value("${telegram.wantToEat}")
     String wantToEat;
 
@@ -39,6 +36,10 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
     @Override
     @Async
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
+        if (!hasText && !hasContact) {
+            return;
+        }
+
         TelegramMessage telegramMessage = telegramUpdate.getMessage();
         String messageText = telegramMessage.getText();
         TelegramUser telegramUser = telegramMessage.getFrom();
@@ -49,19 +50,12 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
             enterFullUserName(telegramUser, messageText, chatId);
         } else if (status == EnterPhone) {
             handleEnterPhone(chatId);
-        } else if (status == EnterLocation) {
-            handleEnterLocation(chatId);
         }
 
     }
 
     @Async
     void handleEnterPhone(Long chatId) {
-        sendMessageShareLocation(chatId, shareLocation, EnterLocation);
-    }
-
-    @Async
-    void handleEnterLocation(Long chatId) {
         sendMessageWantToEat(chatId, wantToEat, WantToEat);
     }
 

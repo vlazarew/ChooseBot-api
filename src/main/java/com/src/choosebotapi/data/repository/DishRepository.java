@@ -14,8 +14,12 @@ import java.util.Optional;
 public interface DishRepository extends JpaRepository<Dish, Long> {
     Optional<Dish> getDishByNameAndRestaurant_NameAndRestaurant_Address(@NotEmpty @NotNull String name, @NotNull String restaurant_name, String restaurant_address);
 
-    @Query(value = "select * " +
-            "from dish" +
-            "", nativeQuery = true)
-    List<Dish> findTop10ByRating();
+    @Query(value = "select ifnull(sum(dr.value), 0) as summary, count(dr.value) as count, dish.id as id\n" +
+            "from dish\n" +
+            "         left join dish_review_list drl on dish.id = drl.dish_id\n" +
+            "         left join dish_review dr on dr.id = drl.review_list_id\n" +
+            "group by dish.id\n" +
+            "order by (sum(dr.value) / count(dr.value)) desc\n" +
+            "limit 10;", nativeQuery = true)
+    List<Object> findTop10ByRating();
 }

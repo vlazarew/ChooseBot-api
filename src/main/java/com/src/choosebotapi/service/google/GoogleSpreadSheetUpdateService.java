@@ -152,9 +152,10 @@ public class GoogleSpreadSheetUpdateService {
             Restaurant restaurant = saveRestaurant(restaurantName, restaurantAddress, averageCheck);
 
 
-            URI photoUrl = getPhotoUrl(dishPhotoLink.substring(dishPhotoLink.indexOf(linkMatcher) + linkMatcher.length()));
-            HttpRequest photoRequest = HttpRequest.newBuilder(photoUrl).header("Accept", "application/json").build();
-            byte[] photoBytes = getPhotoBytes(client, parser, photoRequest);
+//            URI photoUrl = getPhotoUrl(dishPhotoLink.substring(dishPhotoLink.indexOf(linkMatcher) + linkMatcher.length()));
+//            HttpRequest photoRequest = HttpRequest.newBuilder(photoUrl).header("Accept", "application/json").build();
+//            byte[] photoBytes = getPhotoBytes(client, parser, photoRequest);
+            byte[] photoBytes = null;
 
             saveDish(dishName, dishDescription, dishPrice, dishCategoryEntity, dishKitchenDirectionEntity,
                     restaurant, photoBytes);
@@ -184,10 +185,11 @@ public class GoogleSpreadSheetUpdateService {
                     restaurantDB.setName(restaurantName);
                     restaurantDB.setAddress(restaurantAddress);
                     restaurantDB.setAverageCheck(averageCheck);
-                    HashMap<String, Float> coordinates = restaurantDB.getCoordinatesFromYandex();
+//                    HashMap<String, Float> coordinates = restaurantDB.getCoordinatesFromYandex();
 
-                    return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude")
-                            , coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(restaurantDB));
+//                    return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude")
+//                            , coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(restaurantDB));
+                    return restaurantRepository.save(restaurantDB);
                 });
     }
 

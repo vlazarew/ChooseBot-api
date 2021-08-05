@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import java.util.List;
 
 @Entity(name = "session")
@@ -21,10 +22,10 @@ public class Session extends DefaultEntity {
     @Id
     Long id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     TelegramUser user;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     TelegramLocation location;
 
     String dishTemplate;
@@ -41,4 +42,10 @@ public class Session extends DefaultEntity {
 
     @ManyToMany(cascade = CascadeType.ALL)
     List<Dish> dishesToSelect;
+
+    @Min(value = 0)
+    Long dishIndexInList = 0L;
+
+    boolean sessionFinished = false;
+    boolean notificationSend = false;
 }

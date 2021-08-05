@@ -115,11 +115,14 @@ public class TelegramUpdateService {
         TelegramLocation transformedLocation = telegramLocationMapper.toEntity(location);
         transformedLocation = telegramLocationRepository.save(transformedLocation);
 
-        Session newSession = new Session();
-        newSession.setLocation(transformedLocation);
-        newSession.setUser(user);
+        Session session = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(user.getId(), false, false);
+        if (session == null) {
+            session = new Session();
+        }
+        session.setLocation(transformedLocation);
+        session.setUser(user);
+        sessionRepository.save(session);
 
-        sessionRepository.save(newSession);
         return transformedLocation;
     }
 

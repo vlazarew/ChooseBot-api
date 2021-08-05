@@ -1,7 +1,7 @@
 package com.src.choosebotapi.data.model;
 
 public enum UserStatus {
-    NotRegistered, EnterFullName, EnterPhone, EnterLocation, WantToEat, EnterDishOrGetRecommendations,
+    NotRegistered, EnterFullName, EnterPhone, WantToEat, EnterLocation, EnterDishOrGetRecommendations,
     EnterDishName, SelectDishCategory, SelectDishKitchenDirection, SelectAverageCheck, GetResultTopDishesByCategory,
     GetResultRestaurantFromDB;
 //    VerifyEmail, MainPage,

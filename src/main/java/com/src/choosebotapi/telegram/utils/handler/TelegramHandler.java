@@ -3,9 +3,7 @@ package com.src.choosebotapi.telegram.utils.handler;
 import com.src.choosebotapi.data.model.TelegramUpdate;
 import com.src.choosebotapi.data.model.TelegramUser;
 import com.src.choosebotapi.data.model.UserStatus;
-import com.src.choosebotapi.data.repository.TelegramChatRepository;
-import com.src.choosebotapi.data.repository.TelegramLocationRepository;
-import com.src.choosebotapi.data.repository.TelegramUserRepository;
+import com.src.choosebotapi.data.repository.*;
 import com.src.choosebotapi.telegram.TelegramBot;
 import com.src.choosebotapi.telegram.TelegramKeyboards;
 import lombok.AccessLevel;
@@ -38,10 +36,10 @@ public class TelegramHandler implements TelegramMessageHandler {
 //    public NotificationServiceSettingsRepository notificationServiceSettingsRepository;
     @Autowired
     public TelegramKeyboards telegramKeyboards;
-    //    @Autowired
-//    public WeatherSettingsRepository weatherSettingsRepository;
-//    @Autowired
-//    public YandexWeatherService yandexWeatherService;
+    @Autowired
+    public DishRepository dishRepository;
+    @Autowired
+    public SessionRepository sessionRepository;
     @Autowired
     public TelegramLocationRepository telegramLocationRepository;
 //    @Autowired

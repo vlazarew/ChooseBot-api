@@ -6,4 +6,7 @@ import org.springframework.data.rest.webmvc.RepositoryRestController;
 
 @RepositoryRestController
 public interface SessionRepository extends CrudRepository<Session, Long> {
+
+    Session findByUser_IdAndNotificationSendAndSessionFinished(Long userId, boolean notificationSend, boolean sessionFinished);
+
 }

@@ -9,17 +9,6 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
 
-//@FieldDefaults(level = AccessLevel.PRIVATE)
-//@AllArgsConstructor
-//@NoArgsConstructor
-//@Getter
-//@Setter
-//@EqualsAndHashCode
-//class RestaurantId implements Serializable {
-//    String name;
-//    Float longitude;
-//    Float latitude;
-//}
 
 @Entity(name = "restaurant")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -28,7 +17,6 @@ import java.util.HashMap;
 @Table
 @Getter
 @Setter
-//@IdClass(RestaurantId.class)
 @Log4j2
 public class Restaurant extends DefaultEntity {
 
@@ -37,7 +25,6 @@ public class Restaurant extends DefaultEntity {
     Long id;
 
     @NotNull
-//    @Id
     String name;
 
     @Column(length = 1000, name = "description")
@@ -47,9 +34,7 @@ public class Restaurant extends DefaultEntity {
 
     String averageCheck;
 
-    //    @Id
     Float longitude;
-    //    @Id
     Float latitude;
 
     @Lob
