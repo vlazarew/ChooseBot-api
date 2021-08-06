@@ -1,6 +1,6 @@
 package com.src.choosebotapi.telegram.utils.mapper;
 
-import com.src.choosebotapi.data.model.AbstractTelegramEntity;
+import com.src.choosebotapi.data.model.telegram.AbstractTelegramEntity;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.Converter;

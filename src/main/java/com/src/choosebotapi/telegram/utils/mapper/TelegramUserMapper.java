@@ -1,11 +1,9 @@
 package com.src.choosebotapi.telegram.utils.mapper;
 
-import com.src.choosebotapi.data.model.TelegramMessage;
-import com.src.choosebotapi.data.model.TelegramUser;
+import com.src.choosebotapi.data.model.telegram.TelegramUser;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 @Component

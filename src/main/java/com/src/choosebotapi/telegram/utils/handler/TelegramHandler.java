@@ -1,7 +1,20 @@
 package com.src.choosebotapi.telegram.utils.handler;
 
-import com.src.choosebotapi.data.model.*;
-import com.src.choosebotapi.data.repository.*;
+import com.src.choosebotapi.data.model.restaurant.Dish;
+import com.src.choosebotapi.data.model.restaurant.Restaurant;
+import com.src.choosebotapi.data.model.restaurant.Session;
+import com.src.choosebotapi.data.model.telegram.TelegramChat;
+import com.src.choosebotapi.data.model.telegram.TelegramUpdate;
+import com.src.choosebotapi.data.model.telegram.TelegramUser;
+import com.src.choosebotapi.data.model.telegram.UserStatus;
+import com.src.choosebotapi.data.repository.restaurant.DishCategoryRepository;
+import com.src.choosebotapi.data.repository.restaurant.DishKitchenDirectionRepository;
+import com.src.choosebotapi.data.repository.restaurant.DishRepository;
+import com.src.choosebotapi.data.repository.restaurant.SessionRepository;
+import com.src.choosebotapi.data.repository.telegram.TelegramChatRepository;
+import com.src.choosebotapi.data.repository.telegram.TelegramLocationRepository;
+import com.src.choosebotapi.data.repository.telegram.TelegramUserRepository;
+import com.src.choosebotapi.service.yandex.YandexGeoDecoderService;
 import com.src.choosebotapi.telegram.TelegramBot;
 import com.src.choosebotapi.telegram.TelegramKeyboards;
 import lombok.AccessLevel;
@@ -52,8 +65,8 @@ public class TelegramHandler implements TelegramMessageHandler {
     public DishCategoryRepository dishCategoryRepository;
     @Autowired
     public DishKitchenDirectionRepository dishKitchenDirectionRepository;
-//    @Autowired
-//    public TwitterSettingsRepository twitterSettingsRepository;
+    @Autowired
+    public YandexGeoDecoderService yandexGeoDecoderService;
 //    @Autowired
 //    public TwitterHashtagRepository twitterHashtagRepository;
 //    @Autowired
@@ -150,6 +163,12 @@ public class TelegramHandler implements TelegramMessageHandler {
     @Value("${telegram.EXIT_DISH}")
     public String EXIT_DISH;
 
+    @Value("${telegram.BOOK_PLACE_IN_RESTAURANT}")
+    public String BOOK_PLACE_IN_RESTAURANT;
+
+    @Value("${telegram.MAKE_ROUTE_TO_RESTAURANT}")
+    public String MAKE_ROUTE_TO_RESTAURANT;
+
     @Override
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
     }
@@ -218,6 +237,13 @@ public class TelegramHandler implements TelegramMessageHandler {
                     sendMessageAboutDish(chatId, replyKeyboardMarkup);
                     return null;
                 }
+        );
+    }
+
+    public void sendSelectBookOrRoute(Long chatId, String text, UserStatus status) {
+        telegramKeyboards.getSelectBookOrRouteKeyboardMarkup().thenCompose(
+                replyKeyboardMarkup ->
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status))
         );
     }
 

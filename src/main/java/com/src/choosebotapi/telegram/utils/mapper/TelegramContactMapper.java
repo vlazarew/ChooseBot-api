@@ -1,6 +1,6 @@
 package com.src.choosebotapi.telegram.utils.mapper;
 
-import com.src.choosebotapi.data.model.TelegramContact;
+import com.src.choosebotapi.data.model.telegram.TelegramContact;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;

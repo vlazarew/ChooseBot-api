@@ -5,8 +5,16 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.src.choosebotapi.data.model.*;
-import com.src.choosebotapi.data.repository.*;
+import com.src.choosebotapi.data.model.google.GoogleSpreadSheet;
+import com.src.choosebotapi.data.model.restaurant.Dish;
+import com.src.choosebotapi.data.model.restaurant.DishCategory;
+import com.src.choosebotapi.data.model.restaurant.DishKitchenDirection;
+import com.src.choosebotapi.data.model.restaurant.Restaurant;
+import com.src.choosebotapi.data.repository.google.GoogleSpreadSheetRepository;
+import com.src.choosebotapi.data.repository.restaurant.DishCategoryRepository;
+import com.src.choosebotapi.data.repository.restaurant.DishKitchenDirectionRepository;
+import com.src.choosebotapi.data.repository.restaurant.DishRepository;
+import com.src.choosebotapi.data.repository.restaurant.RestaurantRepository;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;
@@ -45,7 +53,7 @@ import java.util.*;
 @PropertySource("classpath:google.properties")
 public class GoogleSpreadSheetUpdateService {
 
-    final long updatePeriod = 5000;
+    //    final long updatePeriod = 5000;
     final String linkMatcher = "?id=";
 
     @Autowired
@@ -83,10 +91,13 @@ public class GoogleSpreadSheetUpdateService {
     @Value("${google.imageTemplate}")
     String imageTemplate;
 
-    @Scheduled(fixedRate = updatePeriod)
+    @Scheduled(cron = "00 15,30,45,00 * * * *")
     @Async
     @Synchronized
     public void checkSpreadSheetUpdates() throws IOException, InterruptedException {
+
+        var countOfRecords = googleSpreadSheetRepository.count();
+
         URI url = getSpreadSheetUrl();
         HttpClient client = HttpClient.newHttpClient();
 
@@ -102,9 +113,12 @@ public class GoogleSpreadSheetUpdateService {
             return;
         }
 
-        for (int index = 1; index < rows.size(); index++) {
-//        for (int index = 1; index < 500; index++) {
-            parseSpreadSheet(client, parser, rows, index);
+        long dishIndex = countOfRecords + 1;
+        int currentRows = 0;
+        if (dishIndex < rows.size()) {
+            for (int index = (int) dishIndex; index < rows.size() && currentRows < 50; index++, currentRows++) {
+                parseSpreadSheet(client, parser, rows, index);
+            }
         }
 
     }
@@ -188,11 +202,13 @@ public class GoogleSpreadSheetUpdateService {
                     restaurantDB.setName(restaurantName);
                     restaurantDB.setAddress(restaurantAddress);
                     restaurantDB.setAverageCheck(averageCheck);
-//                    HashMap<String, Float> coordinates = restaurantDB.getCoordinatesFromYandex();
+                    HashMap<String, Float> coordinates = restaurantDB.getCoordinatesFromYandex();
+                    restaurantDB.setLatitude(coordinates.get("latitude"));
+                    restaurantDB.setLongitude(coordinates.get("longitude"));
 
-//                    return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude")
-//                            , coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(restaurantDB));
-                    return restaurantRepository.save(restaurantDB);
+                    return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude")
+                            , coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(restaurantDB));
+//                    return restaurantRepository.save(restaurantDB);
                 });
     }
 

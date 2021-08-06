@@ -1,25 +1,29 @@
 package com.src.choosebotapi.telegram.utils.handler;
 
-import com.src.choosebotapi.data.model.*;
+import com.src.choosebotapi.data.model.restaurant.*;
+import com.src.choosebotapi.data.model.telegram.*;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.src.choosebotapi.data.model.UserStatus.*;
+import static com.src.choosebotapi.data.model.telegram.UserStatus.*;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EnableAsync
 @PropertySource("classpath:ui.properties")
+@Log4j2
 public class WantToEatTelegramMessageHandler extends TelegramHandler {
 
     @Value("${telegram.enterDishOrGetRecommendations}")
@@ -42,6 +46,18 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
 
     @Value("${telegram.selectDishesFromTop}")
     String selectDishesFromTop;
+
+    @Value("${telegram.selectBookOrRoute}")
+    String selectBookOrRoute;
+
+    @Value("${telegram.bookRestaurantNotImplemented}")
+    String bookRestaurantNotImplemented;
+
+    @Value("${telegram.wantToEat}")
+    String wantToEat;
+
+    @Value("${telegram.routeToRestaurant}")
+    String routeToRestaurant;
 
     @Override
     @Async
@@ -75,9 +91,36 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
             handleSelectDishKitchenDirection(chatId, messageText, telegramUser);
         } else if (status == GetResultTopDishesByCategory) {
             handleResultTopDishes(chatId, messageText, telegramUser);
+        } else if (status == SelectBookOrRoute) {
+            handleSelectBookOrRoute(chatId, messageText, telegramUser);
         }
 
     }
+
+    @Async
+    void handleSelectBookOrRoute(Long chatId, String messageText, TelegramUser telegramUser) {
+        Session session = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(telegramUser.getId(), false, false);
+        if (Objects.equals(messageText, BOOK_PLACE_IN_RESTAURANT)) {
+            sendSelectBookOrRoute(chatId, bookRestaurantNotImplemented, null);
+        } else if (Objects.equals(messageText, MAKE_ROUTE_TO_RESTAURANT)) {
+            session.setSessionFinished(true);
+            sessionRepository.save(session);
+
+            sendTextMessageWithoutKeyboard(chatId, "Спасибо, что воспользовались нашим сервисом подбора блюд ChooseEat. " +
+                    "Ссылка на маршрут будет выслана в течении нескольких секунд", null);
+
+            URI routeUrl = yandexGeoDecoderService.makeRouteUrl(session);
+
+            sendTextMessageWithoutKeyboard(chatId, routeToRestaurant + "\n\n" + routeUrl.toString(), null);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.error(e);
+            }
+            sendMessageWantToEat(chatId, wantToEat, WantToEat);
+        }
+    }
+
 
     @Async
     void handleResultTopDishes(Long chatId, String messageText, TelegramUser telegramUser) {
@@ -104,7 +147,10 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
             newIndex = session.getDishIndexInList() == listLength - 1 ? 0 : session.getDishIndexInList() + 1;
             message = "Следующее блюдо";
         } else if (messageText.equals(SELECT_DISH)) {
-            sendSelectDishFromTop(chatId, "Select Not implemented", GetResultTopDishesByCategory);
+            Dish dish = session.getDishesToSelect().get(session.getDishIndexInList());
+            session.setDish(dish);
+            sessionRepository.save(session);
+            sendSelectBookOrRoute(chatId, selectBookOrRoute, SelectBookOrRoute);
             return;
         }
 
@@ -119,7 +165,7 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
         Session session = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(telegramUser.getId(), false, false);
         Optional<DishCategory> category = dishCategoryRepository.findByName(messageText);
 
-        if (category.isEmpty()){
+        if (category.isEmpty()) {
             sendSelectDishCategory(chatId, "Блюд по выбранной категории не найдено", SelectDishCategory);
             return;
         }
@@ -134,7 +180,7 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
         Session session = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(telegramUser.getId(), false, false);
         Optional<DishKitchenDirection> kitchenDirection = dishKitchenDirectionRepository.findByName(messageText);
 
-        if (kitchenDirection.isEmpty()){
+        if (kitchenDirection.isEmpty()) {
             sendSelectDishKitchenDirection(chatId, "Блюд по выбранной кухне не найдено", SelectDishKitchenDirection);
             return;
         }
@@ -173,7 +219,15 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
 
     @Async
     void handleSelectAverageCheck(Long chatId, TelegramUser telegramUser, String text) {
-        List<Object> dishObjectList = dishRepository.findTop10ByRating();
+        Session session = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(telegramUser.getId(), false, false);
+
+        String dishTemplate = session.getDishTemplate() == null ? "" : session.getDishTemplate();
+        Long dishCategory = (session.getDishCategory() != null && session.getDishCategory().getId() != null) ? session.getDishCategory().getId() : null;
+        Long dishKitchenDirection = (session.getDishKitchenDirection() != null && session.getDishKitchenDirection().getId() != null) ? session.getDishKitchenDirection().getId() : null;
+        TelegramLocation location = session.getLocation();
+
+        List<Object> dishObjectList = dishRepository.findTop10ByRating(dishTemplate, text, dishCategory, dishKitchenDirection,
+                location.getLatitude(), location.getLongitude());
         List<DishReviewStats> dishReviewStats = new ArrayList<>();
         List<Dish> dishes = new ArrayList<>();
         for (Object dishObject : dishObjectList) {
@@ -187,7 +241,6 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
             dishes.add(dish);
         }
 
-        Session session = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(telegramUser.getId(), false, false);
         session.setDishesToSelect(dishes);
         session.setAverageCheck(text);
         sessionRepository.save(session);

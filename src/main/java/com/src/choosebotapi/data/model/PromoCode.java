@@ -1,5 +1,6 @@
 package com.src.choosebotapi.data.model;
 
+import com.src.choosebotapi.data.model.restaurant.Restaurant;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

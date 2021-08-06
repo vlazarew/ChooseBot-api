@@ -1,6 +1,6 @@
 package com.src.choosebotapi.telegram;
 
-import com.src.choosebotapi.data.model.TelegramUser;
+import com.src.choosebotapi.data.model.telegram.TelegramUser;
 import com.src.choosebotapi.telegram.utils.handler.TelegramHandler;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -202,6 +202,23 @@ public class TelegramKeyboards {
 
         return replyKeyboardMarkup;
     }
+
+    public CompletableFuture<ReplyKeyboardMarkup> getSelectBookOrRouteKeyboardMarkup() {
+        CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
+                CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.BOOK_PLACE_IN_RESTAURANT));
+        keyboardFirstRow.add(new KeyboardButton(telegramHandler.MAKE_ROUTE_TO_RESTAURANT));
+
+        keyboard.add(keyboardFirstRow);
+        replyKeyboardMarkup.thenCompose(
+                replyKeyboardMarkup1 -> CompletableFuture.runAsync(() -> replyKeyboardMarkup1.setKeyboard(keyboard)));
+
+        return replyKeyboardMarkup;
+    }
+
 
     private ReplyKeyboardMarkup getTunedReplyKeyboardMarkup() {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();

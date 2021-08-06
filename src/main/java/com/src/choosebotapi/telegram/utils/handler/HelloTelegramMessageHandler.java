@@ -1,7 +1,7 @@
 package com.src.choosebotapi.telegram.utils.handler;
 
-import com.src.choosebotapi.data.model.TelegramMessage;
-import com.src.choosebotapi.data.model.TelegramUpdate;
+import com.src.choosebotapi.data.model.telegram.TelegramMessage;
+import com.src.choosebotapi.data.model.telegram.TelegramUpdate;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.src.choosebotapi.data.model.UserStatus.EnterFullName;
-import static com.src.choosebotapi.data.model.UserStatus.NotRegistered;
+import static com.src.choosebotapi.data.model.telegram.UserStatus.EnterFullName;
+import static com.src.choosebotapi.data.model.telegram.UserStatus.NotRegistered;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)

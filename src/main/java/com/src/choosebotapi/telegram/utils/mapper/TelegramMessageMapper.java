@@ -1,6 +1,6 @@
 package com.src.choosebotapi.telegram.utils.mapper;
 
-import com.src.choosebotapi.data.model.TelegramMessage;
+import com.src.choosebotapi.data.model.telegram.TelegramMessage;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
@@ -26,7 +26,6 @@ public class TelegramMessageMapper extends AbstractMapper<TelegramMessage, Messa
     public void setupMapper() {
         mapper.createTypeMap(Message.class, TelegramMessage.class)
                 .addMappings(m -> {
-                    m.map(Message::getMessageId, TelegramMessage::setMessageId);
                     m.map(Message::getMessageId, TelegramMessage::setId);
                     m.map(Message::getText, TelegramMessage::setText);
                     m.map(Message::getDate, TelegramMessage::setDate);

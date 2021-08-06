@@ -1,7 +1,9 @@
 package com.src.choosebotapi.service;
 
-import com.src.choosebotapi.data.model.*;
-import com.src.choosebotapi.data.repository.*;
+import com.src.choosebotapi.data.model.restaurant.Session;
+import com.src.choosebotapi.data.model.telegram.*;
+import com.src.choosebotapi.data.repository.restaurant.SessionRepository;
+import com.src.choosebotapi.data.repository.telegram.*;
 import com.src.choosebotapi.telegram.utils.mapper.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

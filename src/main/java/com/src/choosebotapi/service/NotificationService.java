@@ -2,14 +2,11 @@ package com.src.choosebotapi.service;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
 
 @Service
 @EnableAsync
@@ -17,18 +14,8 @@ import java.io.IOException;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class NotificationService {
 
-//    @Autowired
-//    GoogleSpreadSheetService googleSpreadSheetService;
-//
-//    @Autowired
-//    GoogleConnection googleConnection;
-
-    final long updatePeriod = 5000;
-
-
-    @Scheduled(fixedRate = updatePeriod)
+    @Scheduled(cron = "0 1/1 * * * *")
     @Async
-    public void checkNotification() throws IOException {
-//        googleSpreadSheetService.readTable(googleConnection);
+    public void checkNotification() {
     }
 }

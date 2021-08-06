@@ -4,6 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.src.choosebotapi.data.model.restaurant.Restaurant;
+import com.src.choosebotapi.data.model.restaurant.Session;
+import com.src.choosebotapi.data.model.telegram.TelegramLocation;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
@@ -28,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 public class YandexGeoDecoderService {
     static String apiKey = null;
     static String urlTemplate = null;
+    static String mapUrlTemplate = null;
 
     @Value("${yandex.key}")
     public void setApiKey(String value) {
@@ -37,6 +41,11 @@ public class YandexGeoDecoderService {
     @Value("${yandex.url}")
     public void setUrlTemplate(String value) {
         urlTemplate = value;
+    }
+
+    @Value("${yandex.mapUrl}")
+    public void setMapUrlTemplate(String value) {
+        mapUrlTemplate = value;
     }
 
 
@@ -84,6 +93,18 @@ public class YandexGeoDecoderService {
         Map<String, String> parameters = new HashMap<>();
         parameters.put("key", apiKey);
         parameters.put("address", address);
+        return template.expand(parameters);
+    }
+
+    public URI makeRouteUrl(Session session) {
+        UriTemplate template = new UriTemplate(mapUrlTemplate);
+        Map<String, String> parameters = new HashMap<>();
+        TelegramLocation location = session.getLocation();
+        parameters.put("latitudeStart", location.getLatitude().toString());
+        Restaurant restaurant = session.getDish().getRestaurant();
+        parameters.put("latitudeEnd", restaurant.getLatitude().toString());
+        parameters.put("longitudeStart", location.getLongitude().toString());
+        parameters.put("longitudeEnd", restaurant.getLongitude().toString());
         return template.expand(parameters);
     }
 
