@@ -96,7 +96,7 @@ public class GoogleSpreadSheetUpdateService {
     @Synchronized
     public void checkSpreadSheetUpdates() throws IOException, InterruptedException {
 
-        var countOfRecords = googleSpreadSheetRepository.count();
+        long countOfRecords = googleSpreadSheetRepository.count();
 
         URI url = getSpreadSheetUrl();
         HttpClient client = HttpClient.newHttpClient();
