@@ -56,7 +56,7 @@ public class Restaurant extends DefaultEntity {
             log.error("Координаты для ресторана " + this.getName() + " не подобраны.");
             this.setLongitude(0F);
             this.setLatitude(0F);
-            return new HashMap<String, Float>() {{
+            return new HashMap<>() {{
                 put("latitude", 0F);
                 put("longitude", 0F);
             }};

@@ -15,7 +15,17 @@ import java.util.Optional;
 public interface DishRepository extends JpaRepository<Dish, Long> {
     Optional<Dish> getDishByNameAndRestaurant_NameAndRestaurant_Address(@NotEmpty @NotNull String name, @NotNull String restaurant_name, String restaurant_address);
 
-    @Query(value = "select ifnull(sum(dr.value), 0) as summary,\n" +
+    @Query(value = "with closest_restaurant(distance, id, name, average_check) as (\n" +
+            "    select st_distance_sphere(POINT(:start_latitude, :start_longitude), POINT(restaurant.latitude, restaurant.longitude)) as distance,\n" +
+            "           restaurant.id,\n" +
+            "           restaurant.name,\n" +
+            "           restaurant.average_check\n" +
+            "    from restaurant\n" +
+            "    where st_distance_sphere(POINT(:start_latitude, :start_longitude), POINT(restaurant.latitude, restaurant.longitude)) < 10000\n" +
+            "    order by st_distance_sphere(POINT(:start_latitude, :start_longitude), POINT(restaurant.latitude, restaurant.longitude)))\n" +
+            "\n" +
+            "\n" +
+            "select ifnull(sum(dr.value), 0) as summary,\n" +
             "       count(dr.value)          as count,\n" +
             "       dish.id                  as id,\n" +
             "       dish.name                as name,\n" +
@@ -26,16 +36,7 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
             "from dish\n" +
             "         left join dish_review_list drl on dish.id = drl.dish_id\n" +
             "         left join dish_review dr on dr.id = drl.review_list_id\n" +
-            "         join (select st_distance_sphere(POINT(:start_latitude, :start_longitude),\n" +
-            "                              POINT(restaurant.latitude, restaurant.longitude)) as distance,\n" +
-            "           restaurant.id,\n" +
-            "           restaurant.name,\n" +
-            "           restaurant.average_check\n" +
-            "    from restaurant\n" +
-            "    where st_distance_sphere(POINT(:start_latitude, :start_longitude),\n" +
-            "                             POINT(restaurant.latitude, restaurant.longitude)) < 10000\n" +
-            "    order by st_distance_sphere(POINT(:start_latitude, :start_longitude),\n" +
-            "                                POINT(restaurant.latitude, restaurant.longitude))) as cr on cr.id = dish.restaurant_id\n" +
+            "         join closest_restaurant cr on cr.id = dish.restaurant_id\n" +
             "where IF(:dish_template = :dish_template is null, true,\n" +
             "         lower(dish.name) like lower(CONCAT('%', :dish_template, '%')))\n" +
             "  and IF(:average_check = :average_check is null, true,\n" +
