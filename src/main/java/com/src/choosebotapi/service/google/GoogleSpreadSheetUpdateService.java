@@ -96,7 +96,7 @@ public class GoogleSpreadSheetUpdateService {
     @Synchronized
     public void checkSpreadSheetUpdates() throws IOException, InterruptedException {
 
-        var countOfRecords = googleSpreadSheetRepository.count();
+        long countOfRecords = googleSpreadSheetRepository.count();
 
         URI url = getSpreadSheetUrl();
         HttpClient client = HttpClient.newHttpClient();
@@ -116,7 +116,8 @@ public class GoogleSpreadSheetUpdateService {
         long dishIndex = countOfRecords + 1;
         int currentRows = 0;
         if (dishIndex < rows.size()) {
-            for (int index = (int) dishIndex; index < rows.size() && currentRows < 50; index++, currentRows++) {
+            for (int index = (int) dishIndex; index < rows.size() && currentRows < 30; index++, currentRows++) {
+                Thread.sleep(5);
                 parseSpreadSheet(client, parser, rows, index);
             }
         }
