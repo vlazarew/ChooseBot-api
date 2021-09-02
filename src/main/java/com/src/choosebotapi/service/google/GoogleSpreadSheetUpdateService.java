@@ -6,20 +6,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.src.choosebotapi.data.model.google.GoogleSpreadSheet;
-import com.src.choosebotapi.data.model.restaurant.Dish;
-import com.src.choosebotapi.data.model.restaurant.DishCategory;
-import com.src.choosebotapi.data.model.restaurant.DishKitchenDirection;
-import com.src.choosebotapi.data.model.restaurant.Restaurant;
 import com.src.choosebotapi.data.repository.google.GoogleSpreadSheetRepository;
-import com.src.choosebotapi.data.repository.restaurant.DishCategoryRepository;
-import com.src.choosebotapi.data.repository.restaurant.DishKitchenDirectionRepository;
-import com.src.choosebotapi.data.repository.restaurant.DishRepository;
-import com.src.choosebotapi.data.repository.restaurant.RestaurantRepository;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -30,20 +27,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriTemplate;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.RenderedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -54,22 +47,9 @@ import java.util.*;
 public class GoogleSpreadSheetUpdateService {
 
     //    final long updatePeriod = 5000;
-    final String linkMatcher = "?id=";
 
     @Autowired
     GoogleSpreadSheetRepository googleSpreadSheetRepository;
-
-    @Autowired
-    DishCategoryRepository dishCategoryRepository;
-
-    @Autowired
-    DishKitchenDirectionRepository dishKitchenDirectionRepository;
-
-    @Autowired
-    RestaurantRepository restaurantRepository;
-
-    @Autowired
-    DishRepository dishRepository;
 
     @Getter
     @Value("${google.key}")
@@ -87,161 +67,79 @@ public class GoogleSpreadSheetUpdateService {
     @Value("${google.spreadsheetTemplate}")
     String spreadsheetTemplate;
 
-    @Getter
-    @Value("${google.imageTemplate}")
-    String imageTemplate;
-
-    @Scheduled(cron = "00 15,30,45,00 * * * *")
+        @Scheduled(cron = "00 15,30,45,00 * * * *")
+//    @Scheduled(fixedDelay = 5000)
     @Async
     @Synchronized
-    public void checkSpreadSheetUpdates() throws IOException, InterruptedException {
+    public void checkSpreadSheetUpdates() {
 
         long countOfRecords = googleSpreadSheetRepository.count();
 
         URI url = getSpreadSheetUrl();
-        HttpClient client = HttpClient.newHttpClient();
+        HttpGet httpGet = new HttpGet(url.toString());
+        try (CloseableHttpClient httpClient = HttpClients.createDefault(); CloseableHttpResponse response = httpClient.execute(httpGet)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            String str = new String(IOUtils.toByteArray(response.getEntity().getContent()), StandardCharsets.UTF_8);
 
-        HttpRequest request = HttpRequest.newBuilder(url).header("Accept", "application/json").build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (statusCode == 200) {
+                JsonParser parser = new JsonParser();
+                JsonElement element = parser.parse(str);
+                JsonObject rootObject = element.getAsJsonObject();
+                JsonArray rows = rootObject.getAsJsonArray("values");
 
-        JsonParser parser = new JsonParser();
-        JsonElement element = parser.parse(response.body());
-        JsonObject rootObject = element.getAsJsonObject();
-        JsonArray rows = rootObject.getAsJsonArray("values");
+                if (rows.size() <= 1) {
+                    return;
+                }
 
-        if (rows.size() <= 1) {
-            return;
-        }
-
-        long dishIndex = countOfRecords + 1;
-        int currentRows = 0;
-        if (dishIndex < rows.size()) {
-            for (int index = (int) dishIndex; index < rows.size() && currentRows < 30; index++, currentRows++) {
-                Thread.sleep(5);
-                parseSpreadSheet(client, parser, rows, index);
+                long dishIndex = countOfRecords + 1;
+                if (dishIndex < rows.size()) {
+                    for (int index = (int) dishIndex; index < rows.size(); index++) {
+                        parseSpreadSheet(rows, index);
+                    }
+                }
+            } else {
+                log.error("Не удалость загрузить данные Google таблицы с блюдами. Код ответа: " + statusCode);
             }
+        } catch (IOException e) {
+            log.error(e);
         }
 
     }
 
-    private void parseSpreadSheet(HttpClient client, JsonParser parser, JsonArray rows, int index) {
+    private void parseSpreadSheet(JsonArray rows, int index) {
         try {
             JsonArray rowValues = rows.get(index).getAsJsonArray();
-            getRowValues(client, parser, rowValues);
+            getRowValues(rowValues, index);
         } catch (Exception e) {
             log.error(e);
         }
     }
 
-    private void getRowValues(HttpClient client, JsonParser parser, JsonArray rowValues) throws IOException, InterruptedException {
-        Long unixTimeCreateRecord = getUnixTimeCreateRecord(rowValues);
-        String bloggerNickname = getPossibleValue(rowValues, 1, false);
-        String restaurantName = getPossibleValue(rowValues, 3, false);
-        String dishName = getPossibleValue(rowValues, 6, true);
-
-        checkRowInDB(client, parser, rowValues, unixTimeCreateRecord, bloggerNickname, restaurantName, dishName);
-    }
-
-    private void checkRowInDB(HttpClient client, JsonParser parser, JsonArray rowValues,
-                              Long unixTimeCreateRecord, String bloggerNickname, String restaurantName, String dishName) throws IOException, InterruptedException {
-        Optional<GoogleSpreadSheet> itemInDB = googleSpreadSheetRepository
-                .findByBloggerNicknameAndDateTimeOfRecordAndRestaurantNameAndDishName(bloggerNickname, unixTimeCreateRecord,
-                        restaurantName, dishName);
-
-
-        if (itemInDB.isEmpty()) {
-            String bloggerURL = getPossibleValue(rowValues, 2, false);
-            String averageCheck = getPossibleValue(rowValues, 4, true);
-            String restaurantAddress = getPossibleValue(rowValues, 5, false);
-            String dishDescription = getPossibleValue(rowValues, 7, true);
-            Float dishPrice = Float.parseFloat(getPossibleValue(rowValues, 8, false));
-            String dishCategory = getPossibleValue(rowValues, 9, true);
-            String dishKitchenDirection = getPossibleValue(rowValues, 10, true);
-            String dishPhotoLink = getPossibleValue(rowValues, 11, false);
-
-            saveGoogleSpreadSheetRow(unixTimeCreateRecord, bloggerNickname, restaurantName, dishName, bloggerURL,
-                    restaurantAddress, dishDescription, dishPrice, dishCategory, dishKitchenDirection, averageCheck, dishPhotoLink);
-
-            DishCategory dishCategoryEntity = saveDishCategory(dishCategory);
-            DishKitchenDirection dishKitchenDirectionEntity = saveDishKitchenDirection(dishKitchenDirection);
-            Restaurant restaurant = saveRestaurant(restaurantName, restaurantAddress, averageCheck);
-
-            byte[] photoBytes = null;
-            try {
-                URI photoUrl = getPhotoUrl(dishPhotoLink.substring(dishPhotoLink.indexOf(linkMatcher) + linkMatcher.length()));
-                HttpRequest photoRequest = HttpRequest.newBuilder(photoUrl).header("Accept", "application/json").build();
-                photoBytes = getPhotoBytes(client, parser, photoRequest);
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
-
-            saveDish(dishName, dishDescription, dishPrice, dishCategoryEntity, dishKitchenDirectionEntity,
-                    restaurant, photoBytes);
+    private void getRowValues(JsonArray rowValues,  int rowIndex) {
+        if (getPossibleValue(rowValues, 0, false, rowIndex).equals("")) {
+            return;
         }
-    }
+        Long unixTimeCreateRecord = getUnixTimeCreateRecord(rowValues, rowIndex);
+        String bloggerNickname = getPossibleValue(rowValues, 1, false, rowIndex);
+        String bloggerURL = getPossibleValue(rowValues, 2, false, rowIndex);
+        String restaurantName = getPossibleValue(rowValues, 3, false, rowIndex);
+        String averageCheck = getPossibleValue(rowValues, 4, true, rowIndex);
+        String restaurantAddress = getPossibleValue(rowValues, 5, false, rowIndex);
+        String dishName = getPossibleValue(rowValues, 6, true, rowIndex);
+        String dishDescription = getPossibleValue(rowValues, 7, true, rowIndex);
+        Float dishPrice = Float.parseFloat(getPossibleValue(rowValues, 8, false, rowIndex));
+        String dishCategory = getPossibleValue(rowValues, 9, true, rowIndex);
+        String dishKitchenDirection = getPossibleValue(rowValues, 10, true, rowIndex);
+        String dishPhotoLink = getPossibleValue(rowValues, 11, false, rowIndex);
 
-    void saveDish(String dishName, String dishDescription, Float dishPrice, DishCategory dishCategoryEntity,
-                  DishKitchenDirection dishKitchenDirectionEntity, Restaurant restaurant, byte[] photoBytes) {
-        dishRepository.getDishByNameAndRestaurant_NameAndRestaurant_Address(dishName, restaurant.getName(), restaurant.getAddress())
-                .orElseGet(() -> {
-                    Dish dishDB = new Dish();
-                    dishDB.setName(dishName);
-                    dishDB.setDescription(dishDescription);
-                    dishDB.setPrice(dishPrice);
-                    dishDB.setCategory(dishCategoryEntity);
-                    dishDB.setKitchenDirection(dishKitchenDirectionEntity);
-                    dishDB.setRestaurant(restaurant);
-                    dishDB.setImage(photoBytes);
-                    return dishRepository.save(dishDB);
-                });
-    }
-
-    Restaurant saveRestaurant(String restaurantName, String restaurantAddress, String averageCheck) {
-        return restaurantRepository.findByNameAndAddress(restaurantName, restaurantAddress)
-                .orElseGet(() -> {
-                    Restaurant restaurantDB = new Restaurant();
-                    restaurantDB.setName(restaurantName);
-                    restaurantDB.setAddress(restaurantAddress);
-                    restaurantDB.setAverageCheck(averageCheck);
-                    HashMap<String, Float> coordinates = restaurantDB.getCoordinatesFromYandex();
-                    restaurantDB.setLatitude(coordinates.get("latitude"));
-                    restaurantDB.setLongitude(coordinates.get("longitude"));
-
-                    return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude")
-                            , coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(restaurantDB));
-//                    return restaurantRepository.save(restaurantDB);
-                });
-    }
-
-    DishKitchenDirection saveDishKitchenDirection(String dishKitchenDirection) {
-        DishKitchenDirection dishKitchenDirectionEntity = null;
-        if (!dishKitchenDirection.equals("")) {
-            dishKitchenDirectionEntity = dishKitchenDirectionRepository.findByName(dishKitchenDirection)
-                    .orElseGet(() -> {
-                        DishKitchenDirection dishKitchenDirectionDB = new DishKitchenDirection();
-                        dishKitchenDirectionDB.setName(dishKitchenDirection);
-                        return dishKitchenDirectionRepository.save(dishKitchenDirectionDB);
-                    });
-        }
-        return dishKitchenDirectionEntity;
-    }
-
-    DishCategory saveDishCategory(String dishCategory) {
-        DishCategory dishCategoryEntity = null;
-        if (!dishCategory.equals("")) {
-            dishCategoryEntity = dishCategoryRepository.findByName(dishCategory)
-                    .orElseGet(() -> {
-                        DishCategory dishCategoryDB = new DishCategory();
-                        dishCategoryDB.setName(dishCategory);
-                        return dishCategoryRepository.save(dishCategoryDB);
-                    });
-        }
-        return dishCategoryEntity;
+        saveGoogleSpreadSheetRow(unixTimeCreateRecord, bloggerNickname, restaurantName, dishName, bloggerURL,
+                restaurantAddress, dishDescription, dishPrice, dishCategory, dishKitchenDirection, averageCheck, dishPhotoLink, rowIndex);
     }
 
     void saveGoogleSpreadSheetRow(Long unixTimeCreateRecord, String bloggerNickname, String restaurantName, String dishName,
                                   String bloggerURL, String restaurantAddress, String dishDescription, Float dishPrice,
-                                  String dishCategory, String dishKitchenDirection, String averageCheck, String dishPhotoLink) {
+                                  String dishCategory, String dishKitchenDirection, String averageCheck, String dishPhotoLink,
+                                  int rowIndex) {
         GoogleSpreadSheet resultItem = new GoogleSpreadSheet();
         resultItem.setDateTimeOfRecord(unixTimeCreateRecord);
         resultItem.setBloggerNickname(bloggerNickname);
@@ -255,34 +153,12 @@ public class GoogleSpreadSheetUpdateService {
         resultItem.setDishKitchen(dishKitchenDirection);
         resultItem.setAverageCheck(averageCheck);
         resultItem.setDishPhotoUrl(dishPhotoLink);
+        resultItem.setRowIndex(rowIndex);
 
         googleSpreadSheetRepository.save(resultItem);
     }
 
-    byte[] getPhotoBytes(HttpClient client, JsonParser parser, HttpRequest photoRequest) throws IOException, InterruptedException {
-        HttpResponse<String> response = client.send(photoRequest, HttpResponse.BodyHandlers.ofString());
-
-        JsonElement photoElement = parser.parse(response.body());
-        JsonObject rootPhotoObject = photoElement.getAsJsonObject();
-        String downloadUrl = rootPhotoObject.get("downloadUrl").getAsString();
-        Image image = null;
-        try {
-            image = ImageIO.read(new URL(downloadUrl));
-        } catch (IOException e) {
-            log.error(e);
-        }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            if (image != null) {
-                ImageIO.write((RenderedImage) image, "jpeg", baos);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return baos.toByteArray();
-    }
-
-    private String getPossibleValue(JsonArray rowValues, int index, boolean makeLower) {
+    private String getPossibleValue(JsonArray rowValues, int index, boolean makeLower, int rowIndex) {
         try {
             String resultString = rowValues.get(index).getAsString().trim();
             if (makeLower) {
@@ -294,20 +170,20 @@ public class GoogleSpreadSheetUpdateService {
             }
             return resultString;
         } catch (Exception e) {
-            log.error("Error with parsing Google Spreadsheet data: " + e);
+            log.error("Ошибка при чтении/парсинге Google Spreadsheet data (row " + rowIndex + "): " + e);
             return "";
         }
 
     }
 
-    private Long getUnixTimeCreateRecord(JsonArray rowValues) {
+    private Long getUnixTimeCreateRecord(JsonArray rowValues, int rowIndex) {
         DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         Date date = null;
         Long unixTimeCreateRecord = null;
         try {
-            date = dateFormat.parse(getPossibleValue(rowValues, 0, false));
+            date = dateFormat.parse(getPossibleValue(rowValues, 0, false, rowIndex));
         } catch (ParseException e) {
-            e.printStackTrace();
+            log.error(e);
         }
         if (date != null) {
             unixTimeCreateRecord = date.getTime() / 1000;
@@ -323,14 +199,5 @@ public class GoogleSpreadSheetUpdateService {
         parameters.put("apiKey", key);
 
         return spreadsheetTemplate.expand(parameters);
-    }
-
-    private URI getPhotoUrl(String imageId) {
-        UriTemplate photoTemplate = new UriTemplate(getImageTemplate());
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("imageId", imageId);
-        parameters.put("apiKey", key);
-
-        return photoTemplate.expand(parameters);
     }
 }

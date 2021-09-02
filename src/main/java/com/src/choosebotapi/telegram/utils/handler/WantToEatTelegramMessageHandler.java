@@ -227,7 +227,7 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
         TelegramLocation location = session.getLocation();
 
         List<Object> dishObjectList = dishRepository.findTop10ByRating(dishTemplate, text, dishCategory, dishKitchenDirection,
-                location.getLatitude(), location.getLongitude());
+                location.getLatitude(), location.getLongitude(), 3000F);
         List<DishReviewStats> dishReviewStats = new ArrayList<>();
         List<Dish> dishes = new ArrayList<>();
         for (Object dishObject : dishObjectList) {

@@ -1,6 +1,7 @@
 package com.src.choosebotapi.data.model.restaurant;
 
 import com.src.choosebotapi.data.model.DefaultEntity;
+import com.src.choosebotapi.data.model.google.GoogleSpreadSheet;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -48,6 +49,9 @@ public class Dish extends DefaultEntity {
 
     @Lob
     byte[] image;
+
+    @OneToOne
+    GoogleSpreadSheet googleSpreadSheetRow;
 
     @OneToMany
     List<DishReview> reviewList;

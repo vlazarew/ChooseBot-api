@@ -35,7 +35,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -253,14 +252,17 @@ public class TelegramHandler implements TelegramMessageHandler {
         Session currentSession = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(chat.getUser().getId(), false, false);
         Dish dishToPresent = currentSession.getDishesToSelect().get(currentSession.getDishIndexInList());
         Restaurant restaurant = dishToPresent.getRestaurant();
+
         String mainInfo = "*" + dishToPresent.getName() + "* / *" + restaurant.getName() + "* / " +
                 restaurant.getAverageCheck() + " / " + restaurant.getAddress();
-        String description = dishToPresent.getDescription() == null ? "" : dishToPresent.getDescription() + "\n";
+        String description = dishToPresent.getDescription() == null ? "" : "*Описание*: " + dishToPresent.getDescription() + "\n";
+
+        String price = dishToPresent.getPrice() == null ? "" : "*Цена*: " + dishToPresent.getPrice() + "\n";
         String category = dishToPresent.getCategory().getName() == null ? "" : "*Категория*: " + dishToPresent.getCategory().getName() + "\n";
         String kitchen = dishToPresent.getKitchenDirection().getName() == null ? "" : "*Кухня*: " + dishToPresent.getKitchenDirection().getName();
 
-        boolean hasAdditional = (!Objects.equals(description, "")) || (!category.equals("")) || (!kitchen.equals(""));
-        String resultMessage = mainInfo + (hasAdditional ? "\n\n" + description + category + kitchen : "");
+        boolean hasAdditional = (!description.equals("")) || (!price.equals("")) || (!category.equals("")) || (!kitchen.equals(""));
+        String resultMessage = mainInfo + (hasAdditional ? "\n\n" + description + price + category + kitchen : "");
 
         byte[] image = dishToPresent.getImage();
         if (image == null || image.length == 0) {
