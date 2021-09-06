@@ -46,6 +46,10 @@ public class RegisterUserTelegramMessageHandler extends TelegramHandler {
         UserStatus status = telegramUser.getStatus();
         Long chatId = telegramMessage.getChat().getId();
 
+        if (messageText.startsWith(START_COMMAND)){
+            return;
+        }
+
         if (status == EnterFullName) {
             enterFullUserName(telegramUser, messageText, chatId);
         } else if (status == EnterPhone) {

@@ -21,11 +21,11 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -34,6 +34,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import static com.src.choosebotapi.data.model.telegram.UserStatus.WantToEat;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -64,6 +66,8 @@ public class TelegramHandler implements TelegramMessageHandler {
     public DishKitchenDirectionRepository dishKitchenDirectionRepository;
     @Autowired
     public YandexGeoDecoderService yandexGeoDecoderService;
+
+
 //    @Autowired
 //    public TwitterHashtagRepository twitterHashtagRepository;
 //    @Autowired
@@ -165,6 +169,12 @@ public class TelegramHandler implements TelegramMessageHandler {
 
     @Value("${telegram.MAKE_ROUTE_TO_RESTAURANT}")
     public String MAKE_ROUTE_TO_RESTAURANT;
+
+    @Value("${telegram.hello}")
+    String helloMessage;
+
+    @Value("${telegram.wantToEat}")
+    String wantToEat;
 
     @Override
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
@@ -356,5 +366,16 @@ public class TelegramHandler implements TelegramMessageHandler {
 
     public String makeStringBold(String text) {
         return "*" + text + "*";
+    }
+
+    public void sendHelloMessage(Long chatId) {
+        sendTextMessageWithoutKeyboard(chatId, helloMessage, null);
+
+        sendMessageWantToEat(chatId, wantToEat, WantToEat);
+//        CompletableFuture.supplyAsync(() -> sendTextMessageWithoutKeyboard(chatId, helloMessage, null))
+//                .thenApply(() -> {
+////                        sendTextMessageWithoutKeyboard(chatId, enterFullUserNameMessage, EnterFullName);
+//                    sendMessageWantToEat(chatId, wantToEat, WantToEat);
+//                });
     }
 }

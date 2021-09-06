@@ -65,7 +65,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         boolean hasLocation = message.hasLocation();
 
         telegramUpdateService.save(update, message, hasContact, hasLocation)
-                .thenApply(tgUpdate -> {
+                .thenCompose(tgUpdate -> {
                     telegramMessageHandlers.forEach(telegramMessageHandler ->
                             CompletableFuture.runAsync(() -> telegramMessageHandler.handle(tgUpdate, hasText,
                                     hasContact, hasLocation)));

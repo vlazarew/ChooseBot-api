@@ -2,9 +2,11 @@ package com.src.choosebotapi.telegram.utils.handler;
 
 import com.src.choosebotapi.data.model.restaurant.*;
 import com.src.choosebotapi.data.model.telegram.*;
+import com.src.choosebotapi.data.repository.restaurant.RestaurantRepository;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Async;
@@ -24,6 +26,9 @@ import static com.src.choosebotapi.data.model.telegram.UserStatus.*;
 @PropertySource("classpath:yandex.properties")
 @Log4j2
 public class WantToEatTelegramMessageHandler extends TelegramHandler {
+
+    @Autowired
+    RestaurantRepository restaurantRepository;
 
     @Value("${telegram.enterDishOrGetRecommendations}")
     String enterDishOrGetRecommendations;
@@ -45,6 +50,9 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
 
     @Value("${telegram.shareLocation}")
     String shareLocation;
+
+    @Value("${telegram.shareLocationRepeat}")
+    String shareLocationRepeat;
 
     @Value("${telegram.selectDishesFromTop}")
     String selectDishesFromTop;
@@ -76,11 +84,20 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
     @Value("${telegram.dishByKitchenDirectoryNotFound}")
     String dishByKitchenDirectoryNotFound;
 
+    @Value("${telegram.selectDishKitchenDirectionClosestError}")
+    String selectDishKitchenDirectionClosestError;
+
+    @Value("${telegram.restaurantByAverageCheckNotFound}")
+    String restaurantByAverageCheckNotFound;
+
     @Value("${telegram.previousDish}")
     String previousDish;
 
     @Value("${telegram.dishByCategoryNotFound}")
     String dishByCategoryNotFound;
+
+    @Value("${telegram.selectDishCategoryClosestError}")
+    String selectDishCategoryClosestError;
 
     @Value("${telegram.dishDescription}")
     String dishDescription;
@@ -116,13 +133,17 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
         Long chatId = telegramMessage.getChat().getId();
 
         if (hasLocation) {
-            handleEnterLocation(chatId);
+            TelegramLocation location = telegramMessage.getLocation();
+            handleEnterLocation(chatId, location.getLatitude(), location.getLongitude());
         }
 
         if (!hasText) {
             return;
         }
 
+        if (messageText.startsWith(START_COMMAND)) {
+            return;
+        }
 
         if (status == WantToEat && messageText.startsWith(WANT_TO_EAT)) {
             handleWantToEat(chatId);
@@ -203,7 +224,11 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
         session.setDishIndexInList(newIndex);
         sessionRepository.save(session);
 
-        sendSelectDishFromTop(chatId, message, getCurrentDish(session), GetResultTopDishesByCategory);
+        Dish dishToPresent = getDishToPresent(telegramUser);
+        String dishDetailedMessage = getDishDetailedMessage(dishToPresent);
+
+        sendTextMessageWithoutKeyboard(chatId, message, null);
+        sendSelectDishFromTop(chatId, dishDetailedMessage, getCurrentDish(session), GetResultTopDishesByCategory);
     }
 
     private Dish getCurrentDish(Session session) {
@@ -224,7 +249,16 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
             return;
         }
 
-        session.setDishKitchenDirection(kitchenDirection.get());
+        DishKitchenDirection dishKitchenDirection = kitchenDirection.get();
+        List<Object> closestDishes = dishRepository.findTop10ByRating(session.getDishTemplate(), null, null, dishKitchenDirection.getId(),
+                session.getLocation().getLatitude(), session.getLocation().getLongitude(), maxDistance);
+
+        if (closestDishes.isEmpty()) {
+            sendSelectDishKitchenDirection(chatId, selectDishKitchenDirectionClosestError, SelectDishKitchenDirection);
+            return;
+        }
+
+        session.setDishKitchenDirection(dishKitchenDirection);
         sessionRepository.save(session);
         sendSelectDishCategory(chatId, selectDishCategory, SelectDishCategory);
     }
@@ -239,7 +273,16 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
             return;
         }
 
-        session.setDishCategory(category.get());
+        DishCategory dishCategory = category.get();
+        List<Object> closestDishes = dishRepository.findTop10ByRating(session.getDishTemplate(), null, dishCategory.getId(),
+                session.getDishKitchenDirection().getId(), session.getLocation().getLatitude(), session.getLocation().getLongitude(), maxDistance);
+
+        if (closestDishes.isEmpty()) {
+            sendSelectDishCategory(chatId, selectDishCategoryClosestError, SelectDishCategory);
+            return;
+        }
+
+        session.setDishCategory(dishCategory);
         sessionRepository.save(session);
         sendSelectAverageCheck(chatId, selectAverageCheck, SelectAverageCheck);
     }
@@ -250,8 +293,14 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
     }
 
     @Async
-    void handleEnterLocation(Long chatId) {
-        sendMessageEnterDishOrGetRecommendations(chatId, enterDishOrGetRecommendations, EnterDishOrGetRecommendations);
+    void handleEnterLocation(Long chatId, Float latitude, Float longitude) {
+        List<Restaurant> restaurantsAround = restaurantRepository.findClosestRestaurant(latitude, longitude, maxDistance);
+
+        if (restaurantsAround.size() > 0) {
+            sendMessageEnterDishOrGetRecommendations(chatId, enterDishOrGetRecommendations, EnterDishOrGetRecommendations);
+        } else {
+            sendMessageWantToEat(chatId, shareLocationRepeat, WantToEat);
+        }
     }
 
     @Async
@@ -272,15 +321,14 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
             session.setDishTemplate(text);
             sessionRepository.save(session);
             sendSelectAverageCheck(chatId, selectAverageCheck, SelectAverageCheck);
-        }
-        else {
+        } else {
             sendTextMessageWithoutKeyboard(chatId, dishByNameNotFound, EnterDishName);
         }
     }
 
     @Async
     void handleSelectAverageCheck(Long chatId, TelegramUser telegramUser, String text) {
-        if (!text.equals(DOWN_1K) && !text.equals(FROM_1K_TO_2K) && !text.equals(UPPER_2K)){
+        if (!text.equals(DOWN_1K) && !text.equals(FROM_1K_TO_2K) && !text.equals(UPPER_2K)) {
             sendSelectAverageCheck(chatId, selectAverageCheckRepeat, SelectAverageCheck);
         }
 
@@ -293,6 +341,12 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
 
         List<Object> dishObjectList = dishRepository.findTop10ByRating(dishTemplate, text, dishCategory, dishKitchenDirection,
                 location.getLatitude(), location.getLongitude(), maxDistance);
+
+        if (dishObjectList.isEmpty()) {
+            sendSelectAverageCheck(chatId, restaurantByAverageCheckNotFound, SelectAverageCheck);
+            return;
+        }
+
         List<DishReviewStats> dishReviewStats = new ArrayList<>();
         List<Dish> dishes = new ArrayList<>();
         for (Object dishObject : dishObjectList) {
