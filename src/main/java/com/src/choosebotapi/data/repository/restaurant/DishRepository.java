@@ -58,4 +58,9 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
                                    @Param("max_distance") Float maxDistance);
 
     Optional<Dish> getDishByGoogleSpreadSheetRow_Id(Long googleSpreadSheetRowId);
+
+    @Query(value = "select dish.* " +
+            "from dish " +
+            "where lower(dish.name) like %:name%", nativeQuery = true)
+    List<Dish> findByNameTemplate(@Param("name") String name);
 }

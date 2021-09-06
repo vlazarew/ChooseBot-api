@@ -1,9 +1,6 @@
 package com.src.choosebotapi.telegram.utils.handler;
 
 import com.src.choosebotapi.data.model.restaurant.Dish;
-import com.src.choosebotapi.data.model.restaurant.Restaurant;
-import com.src.choosebotapi.data.model.restaurant.Session;
-import com.src.choosebotapi.data.model.telegram.TelegramChat;
 import com.src.choosebotapi.data.model.telegram.TelegramUpdate;
 import com.src.choosebotapi.data.model.telegram.TelegramUser;
 import com.src.choosebotapi.data.model.telegram.UserStatus;
@@ -25,10 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -42,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Log4j2
 @PropertySource("classpath:commands.properties")
+@PropertySource("classpath:ui.properties")
 public class TelegramHandler implements TelegramMessageHandler {
 
     @Autowired
@@ -229,11 +227,16 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    public void sendSelectDishFromTop(Long chatId, String text, UserStatus status) {
-        telegramKeyboards.getSelectDishFromTopKeyboardMarkup().thenCompose(
+    public void sendSelectDishFromTop(Long chatId, String text, Dish dishToPresent, UserStatus status) {
+        telegramKeyboards.getSelectDishFromTopKeyboardMarkup(chatId).thenCompose(
                 replyKeyboardMarkup -> {
-                    CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status));
-                    sendMessageAboutDish(chatId, replyKeyboardMarkup);
+                    byte[] image = dishToPresent.getImage();
+                    if (image == null || image.length == 0) {
+                        CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status));
+                    } else {
+                        CompletableFuture.supplyAsync(() -> makeSendPhotoWithKeyboard(chatId, text, replyKeyboardMarkup))
+                                .thenCompose(sendPhoto -> CompletableFuture.runAsync(() -> executeSendingPhoto(chatId, image, sendPhoto, status)));
+                    }
                     return null;
                 }
         );
@@ -246,32 +249,6 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional
-    void sendMessageAboutDish(Long chatId, ReplyKeyboardMarkup replyKeyboardMarkup) {
-        TelegramChat chat = telegramChatRepository.findById(chatId).get();
-        Session currentSession = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(chat.getUser().getId(), false, false);
-        Dish dishToPresent = currentSession.getDishesToSelect().get(currentSession.getDishIndexInList());
-        Restaurant restaurant = dishToPresent.getRestaurant();
-
-        String mainInfo = "*" + dishToPresent.getName() + "* / *" + restaurant.getName() + "* / " +
-                restaurant.getAverageCheck() + " / " + restaurant.getAddress();
-        String description = dishToPresent.getDescription() == null ? "" : "*Описание*: " + dishToPresent.getDescription() + "\n";
-
-        String price = dishToPresent.getPrice() == null ? "" : "*Цена*: " + dishToPresent.getPrice() + "\n";
-        String category = dishToPresent.getCategory().getName() == null ? "" : "*Категория*: " + dishToPresent.getCategory().getName() + "\n";
-        String kitchen = dishToPresent.getKitchenDirection().getName() == null ? "" : "*Кухня*: " + dishToPresent.getKitchenDirection().getName();
-
-        boolean hasAdditional = (!description.equals("")) || (!price.equals("")) || (!category.equals("")) || (!kitchen.equals(""));
-        String resultMessage = mainInfo + (hasAdditional ? "\n\n" + description + price + category + kitchen : "");
-
-        byte[] image = dishToPresent.getImage();
-        if (image == null || image.length == 0) {
-            CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, resultMessage, replyKeyboardMarkup, null));
-        } else {
-            CompletableFuture.supplyAsync(() -> makeSendPhotoWithKeyboard(chatId, resultMessage, replyKeyboardMarkup))
-                    .thenCompose(sendPhoto -> CompletableFuture.runAsync(() -> executeSendingPhoto(chatId, image, sendPhoto)));
-        }
-    }
 
     @Override
     public void sendTextMessageReplyKeyboardMarkup(Long chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup,
@@ -293,14 +270,15 @@ public class TelegramHandler implements TelegramMessageHandler {
             try {
                 telegramBot.execute(sendMessage);
             } catch (TelegramApiException e) {
-                e.printStackTrace();
+                log.error("Ошибка при передаче сообщения " + sendMessage.getText() + " пользователю " + chatId + "\n" +
+                        "Код ошибки: " + e.getMessage());
             }
         });
 
         updateStatus(chatId, status);
     }
 
-    private void executeSendingPhoto(Long chatId, byte[] image, SendPhoto sendPhoto) {
+    private void executeSendingPhoto(Long chatId, byte[] image, SendPhoto sendPhoto, UserStatus status) {
         CompletableFuture.runAsync(() -> {
             try {
                 File imageFile = makeFile(image);
@@ -308,11 +286,12 @@ public class TelegramHandler implements TelegramMessageHandler {
                 telegramBot.execute(sendPhoto);
                 imageFile.delete();
             } catch (TelegramApiException e) {
-                e.printStackTrace();
+                log.error("Ошибка при передаче фотографии " + sendPhoto.getCaption() + " пользователю " + chatId + "\n" +
+                        "Код ошибки: " + e.getMessage());
             }
         });
 
-        updateStatus(chatId, null);
+        updateStatus(chatId, status);
     }
 
     private void updateStatus(Long chatId, UserStatus status) {
@@ -370,8 +349,12 @@ public class TelegramHandler implements TelegramMessageHandler {
         try {
             FileUtils.writeByteArrayToFile(imageFile, image);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Ошибка при создании изображения блюда. Код ошибки: " + e.getMessage());
         }
         return imageFile;
+    }
+
+    public String makeStringBold(String text) {
+        return "*" + text + "*";
     }
 }

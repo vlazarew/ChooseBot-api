@@ -62,7 +62,7 @@ public class YandexGeoDecoderService {
                             try {
                                 geoObject = getJSONObject(response.body(), address);
                             } catch (IOException e) {
-                                e.printStackTrace();
+                                log.error("Ошибка при чтении ответа из Yandex GeoDecoder. Код ошибки: " + e.getMessage());
                             }
                             if (geoObject == null) {
                                 log.error("geoObject is null");
