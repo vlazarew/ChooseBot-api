@@ -76,14 +76,12 @@ public class NotificationController {
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet request = getTemplate(userId, message);
 
-        for (int i = 0; i < 100; i++) {
-            try (CloseableHttpResponse response = client.execute(request)) {
-                int statusCode = response.getStatusLine().getStatusCode();
-                if (statusCode != 200) {
-                    ResponseEntity<InputStream> body = ResponseEntity.status(statusCode).body(response.getEntity().getContent());
-                    log.error(body);
-                    return body;
-                }
+        try (CloseableHttpResponse response = client.execute(request)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode != 200) {
+                ResponseEntity<InputStream> body = ResponseEntity.status(statusCode).body(response.getEntity().getContent());
+                log.error(body);
+                return body;
             }
         }
 
