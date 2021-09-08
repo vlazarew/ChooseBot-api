@@ -81,8 +81,9 @@ public class SaveInfoFromGoogleSpreadSheetService {
     @Value("${google.imageTemplate}")
     String imageTemplate;
 
-//    @Scheduled(fixedDelay = 5000)
-    @Scheduled(cron = "00 15,30,45,00 * * * *")
+    //    @Scheduled(fixedDelay = 5000)
+//    @Scheduled(cron = "00 15,30,45,00 * * * *")
+    @Scheduled(cron = "00 */5  * * * *")
     @Async
     @Synchronized
     public void saveInfoFromGoogleSpreadSheet() {

@@ -6,34 +6,41 @@ import com.src.choosebotapi.data.repository.telegram.TelegramUserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 @RequestMapping(value = "/users", produces = "application/json")
 @CrossOrigin("*")
+@EnableAsync
+@Log4j2
 public class TelegramUserController {
 
     @Autowired
     TelegramUserRepository telegramUserRepository;
 
     @PutMapping(path = "updateStatus", params = {"userId", "statusId"}, produces = "application/json")
-    public ResponseEntity<?> setNewStatusForUser(@RequestParam("userId") Long userId,
-                                              @RequestParam("statusId") Long statusId) {
+    @Async
+    public CompletableFuture<ResponseEntity<?>> setNewStatusForUser(@RequestParam("userId") Long userId,
+                                                                    @RequestParam("statusId") Long statusId) {
         Optional<TelegramUser> telegramUserOptional = telegramUserRepository.findById(userId);
         if (telegramUserOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("user not found");
+            return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.NOT_FOUND).body("user not found"));
         }
 
         TelegramUser user = telegramUserOptional.get();
-        return updateStatusForUser(statusId, user);
+        return CompletableFuture.completedFuture(updateStatusForUser(statusId, user));
     }
 
     private ResponseEntity<String> updateStatusForUser(Long statusId, TelegramUser user) {
@@ -51,16 +58,17 @@ public class TelegramUserController {
     }
 
     @PutMapping(path = "updateStatusForAllUsers", params = {"statusId"}, produces = "application/json")
-    public ResponseEntity<?> setNewStatusForAllUsers(@RequestParam("statusId") Long statusId) {
+    @Async
+    public CompletableFuture<ResponseEntity<?>> setNewStatusForAllUsers(@RequestParam("statusId") Long statusId) {
         ArrayList<TelegramUser> telegramUsers = (ArrayList<TelegramUser>) telegramUserRepository.findAll();
 
         for (TelegramUser user : telegramUsers) {
             ResponseEntity<String> responseEntity = updateStatusForUser(statusId, user);
             if (responseEntity.getStatusCode() == HttpStatus.NOT_FOUND) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseEntity.getBody());
+                return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseEntity.getBody()));
             }
         }
 
-        return ResponseEntity.status(HttpStatus.OK).body("successfully updated");
+        return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.OK).body("successfully updated"));
     }
 }

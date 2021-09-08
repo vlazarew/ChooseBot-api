@@ -1,0 +1,4 @@
+curl -X POST -d 'message=Тест тест' http://localhost:8080/notification/sendMessageToAllUsers
+curl -X POST -d 'userId=397699952&message=Привет' http://localhost:8080/notification/sendMessageToUser
+curl -X PUT -d 'statusId=0' http://localhost:8080/users/updateStatusForAllUsers
+curl -X PUT -d 'userId=397699952&statusId=0' http://localhost:8080/users/updateStatus
