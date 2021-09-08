@@ -67,7 +67,7 @@ public class GoogleSpreadSheetUpdateService {
     @Value("${google.spreadsheetTemplate}")
     String spreadsheetTemplate;
 
-    @Scheduled(cron = "00 15,30,45,00 * * * *")
+    @Scheduled(cron = "00 */5  * * * *")
 //    @Scheduled(fixedDelay = 5000)
     @Async
     @Synchronized
