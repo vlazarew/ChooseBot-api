@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.src</groupId>
     <artifactId>ChooseBot-api</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2</version>
     <name>ChooseBot-api</name>
     <description>ChooseEat API for Telegram bot and admin website</description>
     <properties>

@@ -9,6 +9,6 @@ import java.util.Optional;
 @RepositoryRestController
 public interface GoogleSpreadSheetRepository extends CrudRepository<GoogleSpreadSheet, Long> {
 
-    Optional<GoogleSpreadSheet> findByBloggerNicknameAndDateTimeOfRecordAndRestaurantNameAndDishName(String bloggerNickname, Long dateTimeOfRecord, String restaurantName, String dishName);
+    Optional<GoogleSpreadSheet> getByRowIndex(int rowIndex);
 
 }

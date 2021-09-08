@@ -60,9 +60,9 @@ public class YandexGeoDecoderService {
                         if (response.statusCode() == 200) {
                             JsonObject geoObject = null;
                             try {
-                                geoObject = getJSONObject(response.body());
+                                geoObject = getJSONObject(response.body(), address);
                             } catch (IOException e) {
-                                e.printStackTrace();
+                                log.error("Ошибка при чтении ответа из Yandex GeoDecoder. Код ошибки: " + e.getMessage());
                             }
                             if (geoObject == null) {
                                 log.error("geoObject is null");
@@ -188,7 +188,7 @@ public class YandexGeoDecoderService {
 //        }};
 //    }
 //
-    private static JsonObject getJSONObject(String body) throws IOException {
+    private static JsonObject getJSONObject(String body, String address) throws IOException {
 //        String str = new String(IOUtils.toByteArray(response.getEntity().getContent()), StandardCharsets.UTF_8);
 
         JsonParser parser = new JsonParser();
@@ -201,10 +201,10 @@ public class YandexGeoDecoderService {
         JsonArray featureMemberObject = geoObjectCollectionObject.getAsJsonArray("featureMember");
 
         if (featureMemberObject.size() == 0) {
-            log.error("По указанным координатам не найдено адреса");
+            log.error("По указанному адресу (" + address + " не найдено координат");
             return null;
         } else if (featureMemberObject.size() > 1) {
-            log.warn("По указанным координатам вернули более 1 адреса");
+            log.warn("По указанному адресу (" + address + " вернули более 1 координат");
         }
 
         JsonObject firstAddressBlock = featureMemberObject.get(0).getAsJsonObject();

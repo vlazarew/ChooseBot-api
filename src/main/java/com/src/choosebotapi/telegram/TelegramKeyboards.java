@@ -1,6 +1,8 @@
 package com.src.choosebotapi.telegram;
 
+import com.src.choosebotapi.data.model.restaurant.Session;
 import com.src.choosebotapi.data.model.telegram.TelegramUser;
+import com.src.choosebotapi.data.repository.restaurant.SessionRepository;
 import com.src.choosebotapi.telegram.utils.handler.TelegramHandler;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,9 @@ public class TelegramKeyboards {
 
     @Autowired
     TelegramHandler telegramHandler;
+
+    @Autowired
+    SessionRepository sessionRepository;
 
     public CompletableFuture<ReplyKeyboardMarkup> getCustomReplyMainKeyboardMarkup(TelegramUser user) {
         CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup = CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
@@ -182,15 +187,24 @@ public class TelegramKeyboards {
         return replyKeyboardMarkup;
     }
 
-    public CompletableFuture<ReplyKeyboardMarkup> getSelectDishFromTopKeyboardMarkup() {
+    public CompletableFuture<ReplyKeyboardMarkup> getSelectDishFromTopKeyboardMarkup(Long chatId) {
+        Session session = sessionRepository.findByUser_IdAndNotificationSendAndSessionFinished(chatId, false, false);
+
         CompletableFuture<ReplyKeyboardMarkup> replyKeyboardMarkup =
                 CompletableFuture.completedFuture(getTunedReplyKeyboardMarkup());
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         KeyboardRow keyboardFirstRow = new KeyboardRow();
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.PREVIOUS_DISH));
+
+        if (session.getDishIndexInList() > 0) {
+            keyboardFirstRow.add(new KeyboardButton(telegramHandler.PREVIOUS_DISH));
+        }
+
         keyboardFirstRow.add(new KeyboardButton(telegramHandler.SELECT_DISH));
-        keyboardFirstRow.add(new KeyboardButton(telegramHandler.NEXT_DISH));
+
+        if (session.getDishIndexInList() < session.getDishesToSelect().size() - 1) {
+            keyboardFirstRow.add(new KeyboardButton(telegramHandler.NEXT_DISH));
+        }
 
         KeyboardRow keyboardSecondRow = new KeyboardRow();
         keyboardSecondRow.add(new KeyboardButton(telegramHandler.EXIT_DISH));

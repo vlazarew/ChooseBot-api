@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -59,17 +58,21 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleUpdate(Update update) {
-        Message message = update.getMessage();
-        boolean hasContact = message.hasContact();
-        boolean hasText = message.hasText();
-        boolean hasLocation = message.hasLocation();
+        try {
+            Message message = update.getMessage();
+            boolean hasContact = message.hasContact();
+            boolean hasText = message.hasText();
+            boolean hasLocation = message.hasLocation();
 
-        telegramUpdateService.save(update, message, hasContact, hasLocation)
-                .thenApply(tgUpdate -> {
-                    telegramMessageHandlers.forEach(telegramMessageHandler ->
-                            CompletableFuture.runAsync(() -> telegramMessageHandler.handle(tgUpdate, hasText,
-                                    hasContact, hasLocation)));
-                    return null;
-                });
+            telegramUpdateService.save(update, message, hasContact, hasLocation)
+                    .thenCompose(tgUpdate -> {
+                        telegramMessageHandlers.forEach(telegramMessageHandler ->
+                                CompletableFuture.runAsync(() -> telegramMessageHandler.handle(tgUpdate, hasText,
+                                        hasContact, hasLocation)));
+                        return null;
+                    });
+        } catch (Exception e) {
+            log.error(e);
+        }
     }
 }

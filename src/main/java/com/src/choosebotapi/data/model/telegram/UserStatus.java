@@ -2,7 +2,7 @@ package com.src.choosebotapi.data.model.telegram;
 
 public enum UserStatus {
     NotRegistered, EnterFullName, EnterPhone, WantToEat, EnterLocation, EnterDishOrGetRecommendations,
-    EnterDishName, SelectDishCategory, SelectDishKitchenDirection, SelectAverageCheck, GetResultTopDishesByCategory,
+    EnterDishName, SelectDishKitchenDirection, SelectDishCategory, SelectAverageCheck, GetResultTopDishesByCategory,
     SelectBookOrRoute;
 
     private static UserStatus[] userStatuses;

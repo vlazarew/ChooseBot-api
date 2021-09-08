@@ -11,19 +11,17 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.src.choosebotapi.data.model.telegram.UserStatus.EnterFullName;
-import static com.src.choosebotapi.data.model.telegram.UserStatus.NotRegistered;
+import static com.src.choosebotapi.data.model.telegram.UserStatus.WantToEat;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @PropertySource("classpath:ui.properties")
 public class HelloTelegramMessageHandler extends TelegramHandler {
 
-    @Value("${telegram.hello}")
-    String helloMessage;
 
-    @Value("${telegram.enterFullUserName}")
-    String enterFullUserNameMessage;
+
+    //    @Value("${telegram.enterFullUserName}")
+//    String enterFullUserNameMessage;
 
     @Override
     @Async
@@ -42,12 +40,9 @@ public class HelloTelegramMessageHandler extends TelegramHandler {
 
         Long chatId = telegramMessage.getChat().getId();
 
-        CompletableFuture.runAsync(() -> sendTextMessageWithoutKeyboard(chatId, helloMessage, null))
-                .thenRunAsync(() -> {
-                    if (telegramMessage.getFrom().getStatus() == NotRegistered) {
-                        sendTextMessageWithoutKeyboard(chatId, enterFullUserNameMessage, EnterFullName);
-                    }
-                });
+        sendHelloMessage(chatId);
     }
+
+
 
 }

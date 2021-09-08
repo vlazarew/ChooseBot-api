@@ -33,4 +33,5 @@ public class GoogleSpreadSheet extends DefaultEntity {
     String dishKitchen;
     String averageCheck;
     String dishPhotoUrl;
+    int rowIndex;
 }

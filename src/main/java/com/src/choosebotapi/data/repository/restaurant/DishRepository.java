@@ -21,7 +21,7 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
             "           restaurant.name,\n" +
             "           restaurant.average_check\n" +
             "    from restaurant\n" +
-            "    where st_distance_sphere(POINT(:start_latitude, :start_longitude), POINT(restaurant.latitude, restaurant.longitude)) < 10000\n" +
+            "    where st_distance_sphere(POINT(:start_latitude, :start_longitude), POINT(restaurant.latitude, restaurant.longitude)) < :max_distance\n" +
             "    order by st_distance_sphere(POINT(:start_latitude, :start_longitude), POINT(restaurant.latitude, restaurant.longitude)))\n" +
             "\n" +
             "\n" +
@@ -54,5 +54,13 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
                                    @Param("dish_category") Long dishCategory,
                                    @Param("dish_kitchen_direction") Long dishKitchenDirection,
                                    @Param("start_latitude") Float startLatitude,
-                                   @Param("start_longitude") Float startLongitude);
+                                   @Param("start_longitude") Float startLongitude,
+                                   @Param("max_distance") Float maxDistance);
+
+    Optional<Dish> getDishByGoogleSpreadSheetRow_Id(Long googleSpreadSheetRowId);
+
+    @Query(value = "select dish.* " +
+            "from dish " +
+            "where lower(dish.name) like %:name%", nativeQuery = true)
+    List<Dish> findByNameTemplate(@Param("name") String name);
 }
