@@ -3,9 +3,10 @@ package com.src.choosebotapi.data.model.telegram;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Entity(name = "telegram_user")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -20,7 +21,7 @@ public class TelegramUser extends AbstractTelegramEntity {
     @Id
     Long id;
 
-    @NotEmpty @NotNull String userName;
+    String userName;
 
     String firstName;
     String lastName;

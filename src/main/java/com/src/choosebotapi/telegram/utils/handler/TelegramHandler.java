@@ -1,6 +1,7 @@
 package com.src.choosebotapi.telegram.utils.handler;
 
 import com.src.choosebotapi.data.model.restaurant.Dish;
+import com.src.choosebotapi.data.model.restaurant.Session;
 import com.src.choosebotapi.data.model.telegram.TelegramUpdate;
 import com.src.choosebotapi.data.model.telegram.TelegramUser;
 import com.src.choosebotapi.data.model.telegram.UserStatus;
@@ -21,7 +22,6 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
@@ -32,6 +32,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -371,11 +372,12 @@ public class TelegramHandler implements TelegramMessageHandler {
     public void sendHelloMessage(Long chatId) {
         sendTextMessageWithoutKeyboard(chatId, helloMessage, null);
 
+        ArrayList<Session> sessions = sessionRepository.findByUser_Id(chatId);
+        sessions.forEach(session -> {
+            session.setSessionFinished(true);
+            sessionRepository.save(session);
+        });
+
         sendMessageWantToEat(chatId, wantToEat, WantToEat);
-//        CompletableFuture.supplyAsync(() -> sendTextMessageWithoutKeyboard(chatId, helloMessage, null))
-//                .thenApply(() -> {
-////                        sendTextMessageWithoutKeyboard(chatId, enterFullUserNameMessage, EnterFullName);
-//                    sendMessageWantToEat(chatId, wantToEat, WantToEat);
-//                });
     }
 }

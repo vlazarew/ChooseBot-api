@@ -8,4 +8,7 @@ import java.util.Optional;
 
 @RepositoryRestController
 public interface GoogleSpreadSheetRepository extends CrudRepository<GoogleSpreadSheet, Long> {
+
+    Optional<GoogleSpreadSheet> getByRowIndex(int rowIndex);
+
 }

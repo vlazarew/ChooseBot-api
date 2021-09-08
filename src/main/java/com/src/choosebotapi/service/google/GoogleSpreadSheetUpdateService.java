@@ -67,13 +67,11 @@ public class GoogleSpreadSheetUpdateService {
     @Value("${google.spreadsheetTemplate}")
     String spreadsheetTemplate;
 
-        @Scheduled(cron = "00 15,30,45,00 * * * *")
+    @Scheduled(cron = "00 15,30,45,00 * * * *")
 //    @Scheduled(fixedDelay = 5000)
     @Async
     @Synchronized
     public void checkSpreadSheetUpdates() {
-
-        long countOfRecords = googleSpreadSheetRepository.count();
 
         URI url = getSpreadSheetUrl();
         HttpGet httpGet = new HttpGet(url.toString());
@@ -91,11 +89,8 @@ public class GoogleSpreadSheetUpdateService {
                     return;
                 }
 
-                long dishIndex = countOfRecords + 1;
-                if (dishIndex < rows.size()) {
-                    for (int index = (int) dishIndex; index < rows.size(); index++) {
-                        parseSpreadSheet(rows, index);
-                    }
+                for (int index = 1; index < rows.size(); index++) {
+                    parseSpreadSheet(rows, index);
                 }
             } else {
                 log.error("Не удалость загрузить данные Google таблицы с блюдами. Код ответа: " + statusCode);
@@ -115,7 +110,7 @@ public class GoogleSpreadSheetUpdateService {
         }
     }
 
-    private void getRowValues(JsonArray rowValues,  int rowIndex) {
+    private void getRowValues(JsonArray rowValues, int rowIndex) {
         if (getPossibleValue(rowValues, 0, false, rowIndex).equals("")) {
             return;
         }
@@ -140,7 +135,7 @@ public class GoogleSpreadSheetUpdateService {
                                   String bloggerURL, String restaurantAddress, String dishDescription, Float dishPrice,
                                   String dishCategory, String dishKitchenDirection, String averageCheck, String dishPhotoLink,
                                   int rowIndex) {
-        GoogleSpreadSheet resultItem = new GoogleSpreadSheet();
+        GoogleSpreadSheet resultItem = googleSpreadSheetRepository.getByRowIndex(rowIndex).orElseGet(GoogleSpreadSheet::new);
         resultItem.setDateTimeOfRecord(unixTimeCreateRecord);
         resultItem.setBloggerNickname(bloggerNickname);
         resultItem.setBloggerUrl(bloggerURL);
@@ -170,7 +165,7 @@ public class GoogleSpreadSheetUpdateService {
             }
             return resultString;
         } catch (Exception e) {
-            log.error("Ошибка при чтении/парсинге Google Spreadsheet data (row " + rowIndex + "): " + e);
+            log.error("Ошибка при чтении/парсинге Google Spreadsheet data (row " + (rowIndex + 1) + "): " + e);
             return "";
         }
 

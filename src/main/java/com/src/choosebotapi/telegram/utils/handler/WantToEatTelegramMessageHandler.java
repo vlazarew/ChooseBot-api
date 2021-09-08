@@ -120,6 +120,9 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
     @Value("${telegram.dishByNameNotFound}")
     String dishByNameNotFound;
 
+    @Value("${telegram.selectDishesHelloMessage}")
+    String selectDishesHelloMessage;
+
     @Value("${yandex.maxDistance}")
     Float maxDistance;
 
@@ -368,7 +371,20 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
         String searchDishMessage = getSearchDishMessage(session);
         String dishDetailedMessage = getDishDetailedMessage(dishToPresent);
 
+        sendTextMessageWithoutKeyboard(chatId, selectDishesHelloMessage, null);
+        try {
+            Thread.sleep(500);
+        } catch (Exception e) {
+            log.warn(e.getMessage());
+        }
+
         sendTextMessageWithoutKeyboard(chatId, searchDishMessage, null);
+        try {
+            Thread.sleep(500);
+        } catch (Exception e) {
+            log.warn(e.getMessage());
+        }
+
         sendSelectDishFromTop(chatId, dishDetailedMessage, dishToPresent, GetResultTopDishesByCategory);
     }
 
