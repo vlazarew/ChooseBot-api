@@ -104,7 +104,7 @@ public class GoogleSpreadSheetUpdateService {
     private void parseSpreadSheet(JsonArray rows, int index) {
         try {
             JsonArray rowValues = rows.get(index).getAsJsonArray();
-            getRowValues(rowValues, index);
+            getRowValues(rowValues, index + 1);
         } catch (Exception e) {
             log.error(e);
         }

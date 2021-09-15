@@ -12,7 +12,12 @@ import java.util.Optional;
 
 @RepositoryRestController
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
-    Optional<Restaurant> findByNameAndAddress(@NotNull String name, String address);
+    @Query(value = "select restaurant.*" +
+            "    from restaurant" +
+            "    where lower(restaurant.name) = lower(:name)" +
+            " and lower(restaurant.address) = lower(:address)", nativeQuery = true)
+    Optional<Restaurant> findByNameAndAddress(@Param("name") String name,
+                                                   @Param("address") String address);
 
     Optional<Restaurant> findByNameAndLongitudeAndLatitude(@NotNull String name, Float longitude, Float latitude);
 

@@ -234,19 +234,16 @@ public class SaveInfoFromGoogleSpreadSheetService {
     }
 
     Restaurant saveRestaurant(String restaurantName, String restaurantAddress, String averageCheck) {
-        return restaurantRepository.findByNameAndAddress(restaurantName, restaurantAddress)
-                .orElseGet(() -> {
-                    Restaurant restaurantDB = new Restaurant();
-                    restaurantDB.setName(restaurantName);
-                    restaurantDB.setAddress(restaurantAddress);
-                    restaurantDB.setAverageCheck(averageCheck);
-                    HashMap<String, Float> coordinates = restaurantDB.getCoordinatesFromYandex();
-                    restaurantDB.setLatitude(coordinates.get("latitude"));
-                    restaurantDB.setLongitude(coordinates.get("longitude"));
+        Restaurant resultItem = restaurantRepository.findByNameAndAddress(restaurantName, restaurantAddress).orElseGet(Restaurant::new);
+        resultItem.setName(restaurantName);
+        resultItem.setAddress(restaurantAddress);
+        resultItem.setAverageCheck(averageCheck);
+        HashMap<String, Float> coordinates = resultItem.getCoordinatesFromYandex();
+        resultItem.setLatitude(coordinates.get("latitude"));
+        resultItem.setLongitude(coordinates.get("longitude"));
 
-                    return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude")
-                            , coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(restaurantDB));
-                });
+        return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude"),
+                coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(resultItem));
     }
 
     DishKitchenDirection saveDishKitchenDirection(String dishKitchenDirection) {
