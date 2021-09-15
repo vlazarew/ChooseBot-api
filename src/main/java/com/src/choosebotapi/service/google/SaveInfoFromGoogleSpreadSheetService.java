@@ -99,7 +99,7 @@ public class SaveInfoFromGoogleSpreadSheetService {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
-//        @Scheduled(fixedDelay = 5000)
+    //        @Scheduled(fixedDelay = 5000)
     @Scheduled(cron = "00 */5  * * * *")
     @Async
     @Synchronized
@@ -168,12 +168,55 @@ public class SaveInfoFromGoogleSpreadSheetService {
         if (dishOptional.isEmpty()) {
             return true;
         } else {
+            String logMessage = "Различие в строке " + row.getRowIndex() + ". Причина: ";
+
             Dish dish = dishOptional.get();
-            return !row.getDishName().equals(dish.getName()) || !row.getDishCategory().equals(dish.getCategory().getName())
-                    || !row.getAverageCheck().equals(dish.getRestaurant().getAverageCheck()) || !row.getDishPrice().equals(dish.getPrice())
-                    || !row.getDishDescription().equals(dish.getDescription()) || !row.getDishKitchen().equals(dish.getKitchenDirection().getName())
-                    || !row.getRestaurantAddress().equals(dish.getRestaurant().getAddress()) || !row.getRestaurantName().equals(dish.getRestaurant().getName())
-                    || dish.getImage() == null;
+            if (!row.getDishName().equals(dish.getName())) {
+                log.warn(logMessage + "разные имена блюд. Гугл таблица: " + row.getDishName() + ", БД: " + dish.getName());
+                return true;
+            }
+
+            if (!row.getDishCategory().equals(dish.getCategory().getName())) {
+                log.warn(logMessage + "разные имена категорий. Гугл таблица: " + row.getDishCategory() + ", БД: " + dish.getCategory().getName());
+                return true;
+            }
+
+            if (!row.getAverageCheck().equals(dish.getRestaurant().getAverageCheck())) {
+                log.warn(logMessage + "разные средние чеки ресторанов блюд. Гугл таблица: " + row.getAverageCheck() + ", БД: " + dish.getRestaurant().getAverageCheck());
+                return true;
+            }
+
+            if (!row.getDishPrice().equals(dish.getPrice())) {
+                log.warn(logMessage + "разные стоимости блюд. Гугл таблица: " + row.getDishPrice() + ", БД: " + dish.getPrice());
+                return true;
+            }
+
+            if (!row.getDishDescription().equals(dish.getDescription())) {
+                log.warn(logMessage + "разные описания блюд. Гугл таблица: " + row.getDishDescription() + ", БД: " + dish.getDescription());
+                return true;
+            }
+
+            if (!row.getDishKitchen().equals(dish.getKitchenDirection().getName())) {
+                log.warn(logMessage + "разные кухни блюд. Гугл таблица: " + row.getDishKitchen() + ", БД: " + dish.getKitchenDirection().getName());
+                return true;
+            }
+
+            if (!row.getRestaurantAddress().equals(dish.getRestaurant().getAddress())) {
+                log.warn(logMessage + "разные адреса ресторанов. Гугл таблица: " + row.getRestaurantAddress() + ", БД: " + dish.getRestaurant().getAddress());
+                return true;
+            }
+
+            if (!row.getRestaurantName().equals(dish.getRestaurant().getName())) {
+                log.warn(logMessage + "разные имена ресторанов. Гугл таблица: " + row.getRestaurantName() + ", БД: " + dish.getRestaurant().getName());
+                return true;
+            }
+
+            if (dish.getImage() == null) {
+                log.warn(logMessage + "нет фото");
+                return true;
+            }
+
+            return false;
         }
     }
 
