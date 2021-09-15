@@ -61,18 +61,13 @@ public class NotificationController {
         ArrayList<TelegramUser> telegramUsers = (ArrayList<TelegramUser>) telegramUserRepository.findAll();
 
         for (TelegramUser user : telegramUsers) {
-            try {
-                Thread.sleep(1000);
-            } catch (Exception e) {
-                log.error("error sending message to user: " + user.getId() + ". Error: " + e.getMessage());
-            }
             sendMessageToUserHandler(user.getId(), message);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body("successfully send messages");
     }
 
-    private ResponseEntity<?> sendMessageToUserHandler(Long userId, String message) throws IOException {
+    private ResponseEntity<?> sendMessageToUserHandler(Long userId, String message) {
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet request = getTemplate(userId, message);
 
@@ -80,9 +75,10 @@ public class NotificationController {
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode != 200) {
                 ResponseEntity<InputStream> body = ResponseEntity.status(statusCode).body(response.getEntity().getContent());
-                log.error(body);
-                return body;
+                log.error("error sending message (status != 200) to user: " + userId + ". Error: " + body);
             }
+        } catch (Exception e) {
+            log.error("error sending message (fatal error) to user: " + userId + ". Error: " + e.getMessage());
         }
 
         return ResponseEntity.status(HttpStatus.OK).body("successfully send messages");
