@@ -1,8 +1,17 @@
 package com.src.choosebotapi.service.google;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
+import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.store.FileDataStoreFactory;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
 import com.src.choosebotapi.data.model.google.GoogleSpreadSheet;
 import com.src.choosebotapi.data.model.restaurant.Dish;
 import com.src.choosebotapi.data.model.restaurant.DishCategory;
@@ -14,39 +23,22 @@ import com.src.choosebotapi.data.repository.restaurant.DishKitchenDirectionRepos
 import com.src.choosebotapi.data.repository.restaurant.DishRepository;
 import com.src.choosebotapi.data.repository.restaurant.RestaurantRepository;
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.Synchronized;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriTemplate;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.io.*;
+import java.security.GeneralSecurityException;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Log4j2
 @Service
@@ -55,8 +47,6 @@ import java.util.Optional;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @PropertySource("classpath:google.properties")
 public class SaveInfoFromGoogleSpreadSheetService {
-
-    final String linkMatcher = "?id=";
 
     @Autowired
     DishCategoryRepository dishCategoryRepository;
@@ -73,20 +63,58 @@ public class SaveInfoFromGoogleSpreadSheetService {
     @Autowired
     GoogleSpreadSheetRepository googleSpreadSheetRepository;
 
-    @Getter
-    @Value("${google.key}")
-    String key;
+    private static final String APPLICATION_NAME = "Google Drive API Java Choose bot application";
+    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+    private static final String TOKENS_DIRECTORY_PATH = "tokens";
 
-    @Getter
-    @Value("${google.imageTemplate}")
-    String imageTemplate;
+    /**
+     * Global instance of the scopes required by this quickstart.
+     * If modifying these scopes, delete your previously saved tokens/ folder.
+     */
+    private static final List<String> SCOPES = Collections.singletonList(DriveScopes.DRIVE);
+    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
-    //    @Scheduled(fixedDelay = 5000)
-//    @Scheduled(cron = "00 15,30,45,00 * * * *")
+    /**
+     * Creates an authorized Credential object.
+     *
+     * @param HTTP_TRANSPORT The network HTTP Transport.
+     * @return An authorized Credential object.
+     * @throws IOException If the credentials.json file cannot be found.
+     */
+    private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
+        // Load client secrets.
+        InputStream in = SaveInfoFromGoogleSpreadSheetService.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
+        if (in == null) {
+            throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
+        }
+        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+
+        // Build flow and trigger user authorization request.
+        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+                HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
+                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
+                .setAccessType("offline")
+                .build();
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
+        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+    }
+
+//        @Scheduled(fixedDelay = 5000)
     @Scheduled(cron = "00 */5  * * * *")
     @Async
     @Synchronized
-    public void saveInfoFromGoogleSpreadSheet() {
+    public void logInAndLoadFiles() throws GeneralSecurityException, IOException {
+        // Build a new authorized API client service.
+        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+        Drive service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+                .setApplicationName(APPLICATION_NAME)
+                .build();
+
+        saveInfoFromGoogleSpreadSheet(service);
+    }
+
+
+    public void saveInfoFromGoogleSpreadSheet(Drive service) {
 
         ArrayList<GoogleSpreadSheet> googleSpreadSheetsRows = (ArrayList<GoogleSpreadSheet>) googleSpreadSheetRepository.findAll();
 
@@ -101,16 +129,18 @@ public class SaveInfoFromGoogleSpreadSheetService {
 
                 byte[] photoBytes = null;
                 try {
-                    URI photoUrl = new URI("");
+                    String photoId = "";
                     try {
-                        photoUrl = getPhotoUrl(row.getDishPhotoUrl().substring(row.getDishPhotoUrl().indexOf(linkMatcher) + linkMatcher.length()));
+                        photoId = getPhotoId(row.getDishPhotoUrl());
                     } catch (Exception e) {
-                        log.error("Ошибка при получении url изображения блюда. Строка " + row.getRowIndex() + ". Описание ошибки: " + e.getMessage());
+                        log.error("Ошибка при получении id изображения блюда. Строка " + row.getRowIndex() + ". Описание ошибки: " + e.getMessage());
                     }
 
-                    if (!photoUrl.toString().equals("")) {
-                        HttpGet httpGet = new HttpGet(photoUrl.toString());
-                        photoBytes = getPhotoBytes(httpGet, row.getRowIndex(), true);
+                    if (!photoId.equals("")) {
+                        log.info("downloading image for row " + row.getRowIndex());
+                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                        service.files().get(photoId).executeMediaAndDownloadTo(outputStream);
+                        photoBytes = outputStream.toByteArray();
                     }
                 } catch (Exception e) {
                     log.error(e.getMessage());
@@ -173,7 +203,6 @@ public class SaveInfoFromGoogleSpreadSheetService {
 
                     return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude")
                             , coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(restaurantDB));
-//                    return restaurantRepository.save(restaurantDB);
                 });
     }
 
@@ -203,82 +232,13 @@ public class SaveInfoFromGoogleSpreadSheetService {
         return dishCategoryEntity;
     }
 
-    @Async
-    byte[] getPhotoBytes(HttpGet httpGet, int rowIndex, boolean useProxy) {
-        try (CloseableHttpClient httpClient = HttpClients.createDefault(); CloseableHttpResponse response = httpClient.execute(httpGet)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String str = new String(IOUtils.toByteArray(response.getEntity().getContent()), StandardCharsets.UTF_8);
-
-            if (statusCode == 200) {
-                JsonParser parser = new JsonParser();
-                JsonElement photoElement = parser.parse(str);
-                JsonObject rootPhotoObject = photoElement.getAsJsonObject();
-                String downloadUrl = rootPhotoObject.get("downloadUrl").getAsString();
-                Image image;
-                try {
-                    log.info("downloading image for row " + rowIndex);
-                    image = getImage(downloadUrl, useProxy);
-                } catch (Exception e) {
-                    log.error(e);
-                    return null;
-                }
-
-                if (image == null) {
-                    return getPhotoBytes(httpGet, rowIndex, !useProxy);
-                }
-
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try {
-                    ImageIO.write((RenderedImage) image, "jpeg", baos);
-                } catch (Exception e) {
-                    log.error(e);
-                    return null;
-                }
-                return baos.toByteArray();
-            } else {
-                log.error("Не удалось получить фотографию блюда. Код ответа: " + statusCode + " Описание ошибки: " + str);
-                return null;
-            }
-        } catch (Exception e) {
-            log.error(e);
+    private String getPhotoId(String url) {
+        Pattern pattern = Pattern.compile("[-\\w]{25,}");
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.find()) {
+            return url.substring(matcher.start(), matcher.end());
         }
-        return null;
-    }
-
-    private BufferedImage getImage(String url, boolean useProxy) {
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-            HttpGet request = new HttpGet(url);
-
-            if (useProxy) {
-                HttpHost proxy = new HttpHost("188.133.153.201", 1256, "http");
-
-                RequestConfig config = RequestConfig.custom()
-                        .setProxy(proxy)
-                        .build();
-                request.setConfig(config);
-            }
-
-            try {
-                CloseableHttpResponse response = httpclient.execute(request);
-                return ImageIO.read(response.getEntity().getContent());
-            } catch (Exception e) {
-                log.warn(e.getMessage());
-            } finally {
-                httpclient.close();
-            }
-        } catch (IOException e) {
-            log.error(e);
-        }
-        return null;
-    }
-
-    private URI getPhotoUrl(String imageId) {
-        UriTemplate photoTemplate = new UriTemplate(getImageTemplate());
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("imageId", imageId);
-        parameters.put("apiKey", key);
-
-        return photoTemplate.expand(parameters);
+        return "";
     }
 
 }
