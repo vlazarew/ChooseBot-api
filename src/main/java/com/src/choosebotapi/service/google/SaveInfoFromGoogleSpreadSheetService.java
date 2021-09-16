@@ -99,8 +99,8 @@ public class SaveInfoFromGoogleSpreadSheetService {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
-    //        @Scheduled(fixedDelay = 5000)
-    @Scheduled(cron = "00 */5  * * * *")
+//    @Scheduled(fixedDelay = 5000)
+    @Scheduled(cron = "00 */15  * * * *")
     @Async
     @Synchronized
     public void logInAndLoadFiles() throws GeneralSecurityException, IOException {
@@ -236,14 +236,17 @@ public class SaveInfoFromGoogleSpreadSheetService {
     Restaurant saveRestaurant(String restaurantName, String restaurantAddress, String averageCheck) {
         Restaurant resultItem = restaurantRepository.findByNameAndAddress(restaurantName, restaurantAddress).orElseGet(Restaurant::new);
         resultItem.setName(restaurantName);
-        resultItem.setAddress(restaurantAddress);
         resultItem.setAverageCheck(averageCheck);
-        HashMap<String, Float> coordinates = resultItem.getCoordinatesFromYandex();
-        resultItem.setLatitude(coordinates.get("latitude"));
-        resultItem.setLongitude(coordinates.get("longitude"));
+        if (!resultItem.getAddress().equals(restaurantAddress) || resultItem.getLatitude() == 0 || resultItem.getLongitude() == 0) {
+            resultItem.setAddress(restaurantAddress);
+            HashMap<String, Float> coordinates = resultItem.getCoordinatesFromYandex();
+            resultItem.setLatitude(coordinates.get("latitude"));
+            resultItem.setLongitude(coordinates.get("longitude"));
 
-        return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude"),
-                coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(resultItem));
+            return restaurantRepository.findByNameAndLongitudeAndLatitude(restaurantName, coordinates.get("longitude"),
+                    coordinates.get("latitude")).orElseGet(() -> restaurantRepository.save(resultItem));
+        }
+        return restaurantRepository.save(resultItem);
     }
 
     DishKitchenDirection saveDishKitchenDirection(String dishKitchenDirection) {
