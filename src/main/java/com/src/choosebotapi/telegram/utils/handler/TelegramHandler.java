@@ -185,15 +185,28 @@ public class TelegramHandler implements TelegramMessageHandler {
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
     }
 
+   // @Transactional(rollbackFor = Exception.class)
+    public void sendHelloMessage(Long chatId) {
+        sendTextMessageWithoutKeyboard(chatId, helloMessage, null);
+
+        ArrayList<Session> sessions = sessionRepository.findByUser_Id(chatId);
+        sessions.forEach(session -> {
+            session.setSessionFinished(true);
+            sessionRepository.save(session);
+        });
+
+        sendMessageWantToEat(chatId, wantToEat, WantToEat);
+    }
+
     @Override
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendMessageToUserByCustomMainKeyboard(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
         telegramKeyboards.getCustomReplyMainKeyboardMarkup(telegramUser)
                 .thenCompose(replyKeyboardMarkup ->
                         CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status)));
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendMessageVerifyPhoneNumber(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSharePhoneNumberKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -201,7 +214,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendMessageShareLocation(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getShareLocationKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -209,7 +222,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendMessageWantToEat(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getWantToEatKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -217,7 +230,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendMessageEnterDishOrGetRecommendations(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getEnterDishOrGetRecommendationsKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -225,7 +238,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendSelectAverageCheck(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSelectAverageCheckKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -233,7 +246,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendSelectDishCategory(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSelectDishCategoryKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -241,7 +254,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendSelectDishKitchenDirection(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSelectDishKitchenDirectionKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -249,7 +262,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendSelectDishFromTop(Long chatId, String text, Dish dishToPresent, UserStatus status) {
         telegramKeyboards.getSelectDishFromTopKeyboardMarkup(chatId).thenCompose(
                 replyKeyboardMarkup -> {
@@ -265,7 +278,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-    @Transactional(rollbackFor = Exception.class)
+   // @Transactional(rollbackFor = Exception.class)
     public void sendSelectBookOrRoute(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSelectBookOrRouteKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -383,15 +396,5 @@ public class TelegramHandler implements TelegramMessageHandler {
         return "*" + text + "*";
     }
 
-    public void sendHelloMessage(Long chatId) {
-        sendTextMessageWithoutKeyboard(chatId, helloMessage, null);
 
-        ArrayList<Session> sessions = sessionRepository.findByUser_Id(chatId);
-        sessions.forEach(session -> {
-            session.setSessionFinished(true);
-            sessionRepository.save(session);
-        });
-
-        sendMessageWantToEat(chatId, wantToEat, WantToEat);
-    }
 }
