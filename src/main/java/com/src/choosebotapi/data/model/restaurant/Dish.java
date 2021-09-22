@@ -16,7 +16,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
-@Table
+@Table(indexes = @Index(name = "dishNameIndex", columnList = "name"))
 @Getter
 @Setter
 public class Dish extends DefaultEntity {
