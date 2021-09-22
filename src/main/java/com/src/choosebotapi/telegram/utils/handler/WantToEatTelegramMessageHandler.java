@@ -405,7 +405,6 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
         return selectDishesFromTop + "\n" + dishTemplate + averageCheck + dishCategory + dishKitchenDirection;
     }
 
-    @Transactional
     String getDishDetailedMessage(Dish dishToPresent) {
         Restaurant restaurant = dishToPresent.getRestaurant();
 
