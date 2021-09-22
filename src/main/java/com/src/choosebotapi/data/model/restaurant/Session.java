@@ -1,9 +1,7 @@
 package com.src.choosebotapi.data.model.restaurant;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.src.choosebotapi.data.model.DefaultEntity;
-import com.src.choosebotapi.data.model.restaurant.Dish;
-import com.src.choosebotapi.data.model.restaurant.DishCategory;
-import com.src.choosebotapi.data.model.restaurant.DishKitchenDirection;
 import com.src.choosebotapi.data.model.telegram.TelegramLocation;
 import com.src.choosebotapi.data.model.telegram.TelegramUser;
 import lombok.*;
@@ -13,6 +11,7 @@ import org.springframework.context.annotation.Lazy;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity(name = "session")
@@ -56,4 +55,12 @@ public class Session extends DefaultEntity {
 
     boolean sessionFinished = false;
     boolean notificationSend = false;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "YYYY-MM-HH hh:mm:ss")
+    LocalDateTime lastUpdateDate = LocalDateTime.now();
+
+    @PreUpdate
+    private void updateLastUpdateTime() {
+        setLastUpdateDate(LocalDateTime.now());
+    }
 }
