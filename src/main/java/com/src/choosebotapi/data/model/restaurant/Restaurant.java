@@ -15,7 +15,7 @@ import java.util.HashMap;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
-@Table
+@Table(indexes = @Index(name = "averageCheckIndex", columnList = "averageCheck"))
 @Getter
 @Setter
 @Log4j2
