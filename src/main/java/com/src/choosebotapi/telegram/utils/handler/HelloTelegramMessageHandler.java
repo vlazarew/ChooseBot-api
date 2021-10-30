@@ -2,26 +2,21 @@ package com.src.choosebotapi.telegram.utils.handler;
 
 import com.src.choosebotapi.data.model.telegram.TelegramMessage;
 import com.src.choosebotapi.data.model.telegram.TelegramUpdate;
+import com.src.choosebotapi.service.NotificationService;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.CompletableFuture;
-
-import static com.src.choosebotapi.data.model.telegram.UserStatus.WantToEat;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @PropertySource("classpath:ui.properties")
 public class HelloTelegramMessageHandler extends TelegramHandler {
 
-
-
-    //    @Value("${telegram.enterFullUserName}")
-//    String enterFullUserNameMessage;
+    @Autowired
+    NotificationService notificationService;
 
     @Override
     @Async
@@ -33,16 +28,15 @@ public class HelloTelegramMessageHandler extends TelegramHandler {
         TelegramMessage telegramMessage = telegramUpdate.getMessage();
         String messageText = telegramMessage.getText();
 
-        if (!messageText.startsWith(START_COMMAND)
-                && !messageText.equals(HELLO_BUTTON)) {
-            return;
+        if (messageText.equals(START_COMMAND)) {
+            Long chatId = telegramMessage.getChat().getId();
+            sendHelloMessage(chatId);
+        } else if (messageText.equals(STATS_COMMAND)) {
+            notificationService.sendUserStats();
         }
 
-        Long chatId = telegramMessage.getChat().getId();
 
-        sendHelloMessage(chatId);
     }
-
 
 
 }
