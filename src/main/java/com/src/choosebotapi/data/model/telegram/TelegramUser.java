@@ -7,6 +7,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity(name = "telegram_user")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -29,9 +30,10 @@ public class TelegramUser extends AbstractTelegramEntity {
     String fullName;
 
     String phoneNumber;
-    Boolean registered = false;
     UserStatus status;
 
     String languageCode;
-    Boolean isBot;
+
+    Boolean blocked = false;
+    LocalDateTime blockTime = null;
 }

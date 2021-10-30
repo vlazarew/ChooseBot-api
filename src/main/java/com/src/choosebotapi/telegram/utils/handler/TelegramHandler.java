@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -33,6 +32,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -188,7 +188,7 @@ public class TelegramHandler implements TelegramMessageHandler {
     public void handle(TelegramUpdate telegramUpdate, boolean hasText, boolean hasContact, boolean hasLocation) {
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendHelloMessage(Long chatId) {
         sendTextMessageWithoutKeyboard(chatId, helloMessage, null);
 
@@ -202,14 +202,14 @@ public class TelegramHandler implements TelegramMessageHandler {
     }
 
     @Override
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendMessageToUserByCustomMainKeyboard(Long chatId, TelegramUser telegramUser, String text, UserStatus status) {
         telegramKeyboards.getCustomReplyMainKeyboardMarkup(telegramUser)
                 .thenCompose(replyKeyboardMarkup ->
                         CompletableFuture.runAsync(() -> sendTextMessageReplyKeyboardMarkup(chatId, text, replyKeyboardMarkup, status)));
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendMessageVerifyPhoneNumber(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSharePhoneNumberKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -217,7 +217,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendMessageShareLocation(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getShareLocationKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -225,7 +225,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendMessageWantToEat(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getWantToEatKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -233,7 +233,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendMessageEnterDishOrGetRecommendations(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getEnterDishOrGetRecommendationsKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -241,7 +241,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendSelectAverageCheck(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSelectAverageCheckKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -249,7 +249,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendSelectDishCategory(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSelectDishCategoryKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -257,7 +257,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendSelectDishKitchenDirection(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSelectDishKitchenDirectionKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -265,7 +265,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendSelectDishFromTop(Long chatId, String text, Dish dishToPresent, UserStatus status) {
         telegramKeyboards.getSelectDishFromTopKeyboardMarkup(chatId).thenCompose(
                 replyKeyboardMarkup -> {
@@ -281,7 +281,7 @@ public class TelegramHandler implements TelegramMessageHandler {
         );
     }
 
-   // @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class)
     public void sendSelectBookOrRoute(Long chatId, String text, UserStatus status) {
         telegramKeyboards.getSelectBookOrRouteKeyboardMarkup().thenCompose(
                 replyKeyboardMarkup ->
@@ -312,7 +312,14 @@ public class TelegramHandler implements TelegramMessageHandler {
             } catch (TelegramApiException e) {
                 log.error("Ошибка при передаче сообщения " + sendMessage.getText() + " пользователю " + chatId + "\n" +
                         "Код ошибки: " + e.getMessage());
-                sendTextMessageWithoutKeyboard(chatId, sendMessageFailed, null);
+                if (e.getMessage().contains("[403] Forbidden: bot was blocked by the user")) {
+                    TelegramUser user = userRepository.findById(chatId).get();
+                    user.setBlocked(true);
+                    user.setBlockTime(LocalDateTime.now());
+                    userRepository.save(user);
+                } else {
+                    sendTextMessageWithoutKeyboard(chatId, sendMessageFailed, null);
+                }
             }
         });
 
