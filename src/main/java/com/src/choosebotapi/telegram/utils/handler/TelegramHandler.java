@@ -82,6 +82,9 @@ public class TelegramHandler implements TelegramMessageHandler {
     @Value("${telegram.START_COMMAND}")
     public String START_COMMAND;
 
+    @Value("${telegram.STATS_COMMAND}")
+    public String STATS_COMMAND;
+
     @Value("${telegram.HELLO_BUTTON}")
     public String HELLO_BUTTON;
 

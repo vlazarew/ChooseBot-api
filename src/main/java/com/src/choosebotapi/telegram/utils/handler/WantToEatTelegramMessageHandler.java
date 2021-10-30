@@ -144,7 +144,7 @@ public class WantToEatTelegramMessageHandler extends TelegramHandler {
             return;
         }
 
-        if (messageText.startsWith(START_COMMAND)) {
+        if (messageText.equals(START_COMMAND) || messageText.equals(STATS_COMMAND)) {
             return;
         }
 
